@@ -7,13 +7,13 @@ export default function Estoque() {
 
   // Dados simulados baseados no protótipo e na regra de metragem
   const [estoqueData, setEstoqueData] = useState([
-    { id: 1, tecido: 'Crepe Georgette', cor: 'Off-white', metragem: 245, pecas: 3 },
-    { id: 2, tecido: 'Crepe Georgette', cor: 'Rose', metragem: 180, pecas: 2 },
-    { id: 3, tecido: 'Linho Natural', cor: 'Natural', metragem: 15, pecas: 1 }, // < 20 = BAIXO
-    { id: 4, tecido: 'Suede Automotivo', cor: 'Cinza Chumbo', metragem: 320, pecas: 4 },
-    { id: 5, tecido: 'Suede Automotivo', cor: 'Bege', metragem: 140, pecas: 2 },
-    { id: 6, tecido: 'Malha Canelada', cor: 'Cru', metragem: 210, pecas: 3 },
-    { id: 7, tecido: 'Tule de Festa', cor: 'Marfim', metragem: 8.5, pecas: 1 }, // < 20 = BAIXO
+    { id: 1, tecido: 'Crepe Georgette', cor: 'Off-white', metragem: 245 },
+    { id: 2, tecido: 'Crepe Georgette', cor: 'Rose', metragem: 180 },
+    { id: 3, tecido: 'Linho Natural', cor: 'Natural', metragem: 15 }, // < 20 = BAIXO
+    { id: 4, tecido: 'Suede Automotivo', cor: 'Cinza Chumbo', metragem: 320 },
+    { id: 5, tecido: 'Suede Automotivo', cor: 'Bege', metragem: 140 },
+    { id: 6, tecido: 'Malha Canelada', cor: 'Cru', metragem: 210 },
+    { id: 7, tecido: 'Tule de Festa', cor: 'Marfim', metragem: 8.5 }, // < 20 = BAIXO
   ]);
 
   const linhasFiltradas = estoqueData.filter(item => 
@@ -57,7 +57,6 @@ export default function Estoque() {
               <th style={styles.th}>TECIDO</th>
               <th style={styles.th}>COR / CÓDIGO</th>
               <th style={styles.th}>METRAGEM DISPONÍVEL</th>
-              <th style={styles.th}>PEÇAS (ROLOS)</th>
             </tr>
           </thead>
           <tbody>
@@ -76,7 +75,6 @@ export default function Estoque() {
                     {item.metragem} m
                     {isEstoqueBaixo && <span style={styles.badgeBaixo}>BAIXO</span>}
                   </td>
-                  <td style={styles.td}>{item.pecas}</td>
                 </tr>
               );
             })}
@@ -102,22 +100,30 @@ export default function Estoque() {
   );
 }
 
+// Data de hoje (AAAA-MM-DD) no fuso local; toISOString() usaria UTC e viraria o dia após as 21h no Brasil
+function hojeLocal() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 // Componente do Modal
 function ModalNovaEntrada({ onClose, onSave }) {
-  // O modal pede tecido, cor, metragem[cite: 5]
+  // O modal pede tecido, cor, metragem e data de entrada[cite: 5]
   const [tecido, setTecido] = useState('');
   const [cor, setCor] = useState('');
   const [metragem, setMetragem] = useState('');
-  const [pecas, setPecas] = useState('1'); // Mantido do protótipo
+  const [dataEntrada, setDataEntrada] = useState(hojeLocal);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if(tecido && cor && metragem) {
+    if(tecido && cor && metragem && dataEntrada) {
       onSave({
         tecido,
         cor,
         metragem: parseFloat(metragem),
-        pecas: parseInt(pecas, 10)
+        dataEntrada
       });
     }
   };
@@ -172,13 +178,13 @@ function ModalNovaEntrada({ onClose, onSave }) {
               />
             </div>
             <div style={{...styles.inputGroup, flex: 1}}>
-              <label style={styles.label}>Nº DE PEÇAS</label>
-              <input 
-                type="number" 
-                min="1"
-                value={pecas}
-                onChange={(e) => setPecas(e.target.value)}
+              <label style={styles.label}>DATA DE ENTRADA</label>
+              <input
+                type="date"
+                value={dataEntrada}
+                onChange={(e) => setDataEntrada(e.target.value)}
                 style={styles.input}
+                required
               />
             </div>
           </div>
