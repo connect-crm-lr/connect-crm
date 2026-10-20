@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Plus, MessageSquare } from 'lucide-react';
 
 export default function Clientes() {
