@@ -10,7 +10,7 @@ export default function FichaCliente({ cliente, onClose }) {
 
   const handleWhatsApp = () => {
     const mensagem = encodeURIComponent(`Olá ${cliente.nome}, tudo bem?`);
-    window.open(`https://wa.me/55${cliente.telefone}?text=${mensagem}`, '_blank');
+    window.open(`https://wa.me/${cliente.telefone}?text=${mensagem}`, '_blank');
   };
 
   return (

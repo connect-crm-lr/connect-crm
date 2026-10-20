@@ -10,7 +10,7 @@ export default function Clientes() {
     {
       id: 1,
       nome: 'Ateliê Bella Noiva',
-      telefone: '11982345678', // Formato numérico para o link do WhatsApp
+      telefone: '5511982345678', // Só dígitos, já com DDI 55 (RD-016); usado direto no link do WhatsApp
       telefoneDisplay: '(11) 98234-5678',
       tags: ['Moda Festa'],
       pedidoEmAberto: true,
@@ -18,7 +18,7 @@ export default function Clientes() {
     {
       id: 2,
       nome: 'Casa Têxtil Moreno',
-      telefone: '1134567890',
+      telefone: '551134567890',
       telefoneDisplay: '(11) 3456-7890',
       tags: ['Linho', 'Estofaria'],
       pedidoEmAberto: false,
@@ -26,7 +26,7 @@ export default function Clientes() {
     {
       id: 3,
       nome: 'Studio Decor SP',
-      telefone: '11976543210',
+      telefone: '5511976543210',
       telefoneDisplay: '(11) 97654-3210',
       tags: ['Estofaria'],
       pedidoEmAberto: true,
@@ -53,7 +53,7 @@ export default function Clientes() {
 
     const mensagemCodificada = encodeURIComponent(mensagem);
     // Formato exigido: https://wa.me/<telefone>?text=<mensagem codificada>
-    const url = `https://wa.me/55${cliente.telefone}?text=${mensagemCodificada}`;
+    const url = `https://wa.me/${cliente.telefone}?text=${mensagemCodificada}`;
     window.open(url, '_blank');
   };
 
