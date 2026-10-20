@@ -90,7 +90,7 @@ export default function Login() {
       </div>
 
       {/* Rodapé */}
-      <p style={styles.footer}>© 2024 Connect CRM · LR Representações</p>
+      <p style={styles.footer}>© {new Date().getFullYear()} Connect CRM · LR Representações</p>
     </div>
   );
 }
