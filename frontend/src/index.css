@@ -1,0 +1,33 @@
+/* Estilos globais do Connect CRM */
+
+:root {
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: #111827;
+  background-color: #F3F4F6;
+  color-scheme: light; /* sempre tema claro, mesmo com o Windows no modo escuro */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Campos e botões herdam a fonte do sistema */
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
