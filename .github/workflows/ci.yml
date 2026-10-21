@@ -1,0 +1,146 @@
+# CI do Connect CRM: roda build e testes em todo PR e push para develop/main,
+# para que nada quebrado entre sem ninguem perceber.
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Um push novo no mesmo PR/branch cancela a execucao anterior que ainda estiver rodando.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read # o paths-filter le a lista de arquivos alterados do PR
+
+jobs:
+  # Descobre quais pastas mudaram, para cada job rodar so quando precisar.
+  mudancas:
+    name: Detectar mudancas
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filtro.outputs.backend }}
+      frontend: ${{ steps.filtro.outputs.frontend }}
+      frontend_pronto: ${{ steps.front.outputs.pronto }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Filtrar pastas alteradas
+        id: filtro
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'database/**'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/ci.yml'
+
+      # O job do front so entra depois do merge do PR do front-end:
+      # enquanto nao existir frontend/package.json, ele fica desligado.
+      - name: Verificar se o front-end ja existe
+        id: front
+        run: |
+          if [ -f frontend/package.json ]; then
+            echo "pronto=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pronto=false" >> "$GITHUB_OUTPUT"
+            echo "frontend/package.json ainda nao existe: job do front-end ignorado."
+          fi
+
+  backend:
+    name: Back-end (build e testes)
+    needs: mudancas
+    if: needs.mudancas.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Banco descartavel so para os testes. Os valores precisam bater com o database/.env abaixo.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: connect_crm
+          POSTGRES_USER: connectcrm
+          POSTGRES_PASSWORD: connectcrm_ci
+          TZ: America/Sao_Paulo
+          PGTZ: America/Sao_Paulo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U connectcrm -d connect_crm"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configurar Java 21 (Temurin) com cache do Maven
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      # O application.yaml le as credenciais de ../database/.env (mesmo arquivo do Docker).
+      # Valores fixos de teste: nao e senha real, o banco e descartado no fim do job.
+      - name: Criar database/.env de teste
+        run: |
+          cat > database/.env <<'EOF'
+          POSTGRES_DB=connect_crm
+          POSTGRES_USER=connectcrm
+          POSTGRES_PASSWORD=connectcrm_ci
+          POSTGRES_PORT=5432
+          EOF
+
+      - name: Rodar testes (./mvnw test)
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw -B test
+
+      - name: Guardar relatorios dos testes (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  frontend:
+    name: Front-end (lint e build)
+    needs: mudancas
+    if: needs.mudancas.outputs.frontend == 'true' && needs.mudancas.outputs.frontend_pronto == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configurar Node 24 com cache do npm
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias (npm ci)
+        run: npm ci
+
+      - name: Lint (npm run lint)
+        run: npm run lint
+
+      - name: Build (npm run build)
+        run: npm run build
