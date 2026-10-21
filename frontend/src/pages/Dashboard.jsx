@@ -1,4 +1,4 @@
-    import React from 'react';
+ 
 
 export default function Dashboard() {
   // Dados simulados baseados no protótipo para a montagem visual
