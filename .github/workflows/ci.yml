@@ -103,9 +103,23 @@ jobs:
 
       - name: Rodar testes (./mvnw test)
         working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: dev # TEMPORARIO: validar o perfil dev da issue #16
         run: |
           chmod +x mvnw
           ./mvnw -B test
+
+      # TEMPORARIO (issue #16): confere os dados de teste gravados pelo perfil dev. Sera removido.
+      - name: TEMP - conferir dados de teste do perfil dev
+        env:
+          PGPASSWORD: connectcrm_ci
+        run: |
+          Q="psql -h localhost -U connectcrm -d connect_crm -v ON_ERROR_STOP=1"
+          $Q -c "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank"
+          $Q -c "SELECT (SELECT count(*) FROM cliente) clientes, (SELECT count(*) FROM tecido) tecidos, (SELECT count(*) FROM estoque) estoque, (SELECT count(*) FROM entrada_estoque) entradas, (SELECT count(*) FROM negociacao) negociacoes, (SELECT count(*) FROM pedido) pedidos, (SELECT count(*) FROM item_pedido) itens, (SELECT count(*) FROM interacao) interacoes, (SELECT count(*) FROM follow_up) followups"
+          echo "Auditoria do estoque (deve vir vazia):"
+          $Q -c "SELECT e.id_estoque, e.metragem AS saldo_gravado, COALESCE(ent.total,0)-COALESCE(sai.total,0) AS saldo_calculado FROM estoque e LEFT JOIN (SELECT id_estoque, SUM(metragem) total FROM entrada_estoque GROUP BY id_estoque) ent ON ent.id_estoque=e.id_estoque LEFT JOIN (SELECT ip.id_estoque, SUM(ip.metragem) total FROM item_pedido ip JOIN pedido p ON p.id_pedido=ip.id_pedido WHERE p.status<>'CANCELADO' GROUP BY ip.id_estoque) sai ON sai.id_estoque=e.id_estoque WHERE e.metragem <> COALESCE(ent.total,0)-COALESCE(sai.total,0)"
+          test "$($Q -At -c "SELECT count(*) FROM cliente")" = "5"
 
       - name: Guardar relatorios dos testes (se falhar)
         if: failure()
