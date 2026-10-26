@@ -1,0 +1,8 @@
+# Perfil "dev": so para desenvolvimento local.
+# Alem das migrations normais (V1, V2...), aplica os dados de teste de db/dev.
+# Sem este perfil o Flyway le apenas db/migration, entao os dados de teste nunca chegam a producao.
+spring:
+  flyway:
+    locations:
+      - classpath:db/migration
+      - classpath:db/dev
