@@ -5,7 +5,9 @@ import Dashboard from '../pages/Dashboard';
 import Clientes from '../pages/Clientes';
 import Funil from '../pages/Funil';
 import Estoque from '../pages/Estoque';
-import Catalogo from '../pages/Catalogo'; // <-- Importação do Catálogo
+import Catalogo from '../pages/Catalogo';
+import NovoPedido from '../pages/NovoPedido';
+import HistoricoVendas from '../pages/HistoricoVendas'; // <-- Importação do Histórico de Vendas
 
 export default function AppRoutes() {
   return (
@@ -18,13 +20,12 @@ export default function AppRoutes() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="funil" element={<Funil />} />
-          
-          {/* Rota do Catálogo atualizada */}
-          <Route path="catalogo" element={<Catalogo />} /> 
-          
+          <Route path="catalogo" element={<Catalogo />} />
           <Route path="estoque" element={<Estoque />} />
-          <Route path="novo-pedido" element={<div>Novo Pedido Temporário</div>} />
-          <Route path="historico-vendas" element={<div>Histórico Temporário</div>} />
+          <Route path="novo-pedido" element={<NovoPedido />} />
+          
+          {/* Rota do Histórico de Vendas atualizada */}
+          <Route path="historico-vendas" element={<HistoricoVendas />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,20 +1,24 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Filter, 
-  BookOpen, 
-  Package, 
-  FilePlus, 
-  History, 
-  LogOut 
+import {
+  LayoutDashboard,
+  Users,
+  Filter,
+  BookOpen,
+  Package,
+  FilePlus,
+  History,
+  LogOut,
 } from 'lucide-react';
+
+import logoImg from '../assets/logo-nova.png';
+
+// Mesma cor de fundo da logo, para ela se fundir com a sidebar
+const SIDEBAR_BG = '#01061C';
 
 export default function Sidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Futuramente, aqui será limpo o token de sessão
     navigate('/login');
   };
 
@@ -26,20 +30,14 @@ export default function Sidebar() {
     { path: '/estoque', label: 'Estoque', icon: Package },
     { path: '/novo-pedido', label: 'Novo Pedido', icon: FilePlus },
     { path: '/historico-vendas', label: 'Histórico de Vendas', icon: History },
-    // A tela "Usuários" foi omitida conforme a regra do MVP
   ];
 
   return (
     <aside style={styles.sidebar}>
-      {/* Cabeçalho da Sidebar */}
       <div style={styles.header}>
-        <div style={styles.logoBox}>
-          <span style={styles.logoText}>C</span>
-        </div>
-        <span style={styles.brandName}>Connect CRM</span>
+        <img src={logoImg} alt="Connect CRM Logo" style={styles.logoImage} />
       </div>
 
-      {/* Navegação */}
       <nav style={styles.nav}>
         {menuItems.map((item) => (
           <NavLink
@@ -56,7 +54,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Rodapé da Sidebar */}
       <div style={styles.footer}>
         <p style={styles.companyName}>LR REPRESENTAÇÕES</p>
         <button onClick={handleLogout} style={styles.logoutButton}>
@@ -68,12 +65,11 @@ export default function Sidebar() {
   );
 }
 
-// Estilos in-line da Sidebar
 const styles = {
   sidebar: {
     width: '250px',
-    backgroundColor: '#312E81', // Azul escuro do protótipo
-    color: '#D1D5DB', // Cor do texto inativo (cinzento claro)
+    backgroundColor: SIDEBAR_BG,
+    color: '#D1D5DB',
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
@@ -81,31 +77,20 @@ const styles = {
     top: 0,
   },
   header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    padding: '1.5rem',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-  },
-  logoBox: {
-    width: '32px',
-    height: '32px',
-    backgroundColor: '#4F46E5', // Azul principal mais claro
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: '1rem',
-  },
-  brandName: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: '1.125rem',
-  },
+  width: '100%',
+  height: '190px',          // altura da área marcada no print
+  padding: 0,               // sem espaçamento, a logo ocupa tudo
+  overflow: 'hidden',
+  backgroundColor: SIDEBAR_BG,
+  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+},
+  logoImage: {
+  display: 'block',
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',       // preenche todo o espaço sem distorcer
+  objectPosition: 'center', // mantém o centro (onde fica a logo)
+},
   nav: {
     flex: 1,
     padding: '1rem 0',
@@ -119,16 +104,17 @@ const styles = {
     gap: '0.75rem',
     padding: '0.75rem 1.5rem',
     textDecoration: 'none',
-    color: '#D1D5DB', // Cinzento claro
+    color: '#D1D5DB',
     fontSize: '0.875rem',
     fontWeight: '500',
+    borderLeft: '4px solid transparent', // evita "pulo" do texto ao ativar o item
     transition: 'all 0.2s',
   },
   navItemActive: {
-    backgroundColor: '#4F46E5', // Fundo azul quando ativo
-    color: 'white',
-    borderLeft: '4px solid white', // Destaque na borda esquerda
-  },
+  backgroundColor: '#1E3A8A', // azul que combina com o #01061C
+  color: 'white',
+  borderLeft: '4px solid #60A5FA', // detalhe azul claro no lugar do branco
+},
   icon: {
     minWidth: '20px',
   },
@@ -154,4 +140,4 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: '500',
   },
-};  
+};
