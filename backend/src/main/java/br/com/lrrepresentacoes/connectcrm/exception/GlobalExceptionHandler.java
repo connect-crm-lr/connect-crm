@@ -1,5 +1,6 @@
 package br.com.lrrepresentacoes.connectcrm.exception;
 
+import br.com.lrrepresentacoes.connectcrm.dto.CampoErro;
 import br.com.lrrepresentacoes.connectcrm.dto.ErroResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -16,8 +17,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Converte as exceções da aplicação no formato ErroResponse, para o front tratar
@@ -31,10 +34,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErroResponse> validacao(MethodArgumentNotValidException ex,
                                                   HttpServletRequest request) {
-        Map<String, String> campos = new LinkedHashMap<>();
+        List<CampoErro> campos = new ArrayList<>();
+        Set<String> jaIncluidos = new HashSet<>();
+        // Padrão Iterator: percorre os erros de validação com o for-each do Java.
         for (FieldError erro : ex.getBindingResult().getFieldErrors()) {
-            // Mantém a primeira mensagem de cada campo (o front mostra uma por campo).
-            campos.putIfAbsent(erro.getField(), erro.getDefaultMessage());
+            // Mantém só a primeira mensagem de cada campo (o front mostra uma por campo).
+            if (jaIncluidos.add(erro.getField())) {
+                campos.add(new CampoErro(erro.getField(), erro.getDefaultMessage()));
+            }
         }
         return ResponseEntity.badRequest().body(ErroResponse.deValidacao(request.getRequestURI(), campos));
     }
@@ -79,7 +86,7 @@ public class GlobalExceptionHandler {
             return resposta(status, mensagem, request);
         }
         log.error("Erro inesperado em {}", request.getRequestURI(), ex);
-        return resposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno. Tente novamente mais tarde", request);
+        return resposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno, tente novamente", request);
     }
 
     private ResponseEntity<ErroResponse> resposta(HttpStatusCode status, String mensagem, HttpServletRequest request) {

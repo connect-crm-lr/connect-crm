@@ -1,5 +1,6 @@
 package br.com.lrrepresentacoes.connectcrm.exception;
 
+import br.com.lrrepresentacoes.connectcrm.dto.CampoErro;
 import br.com.lrrepresentacoes.connectcrm.dto.ErroResponse;
 import br.com.lrrepresentacoes.connectcrm.dto.TagRequest;
 import org.junit.jupiter.api.Test;
@@ -11,8 +12,6 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GlobalExceptionHandlerTest {
@@ -23,15 +22,15 @@ class GlobalExceptionHandlerTest {
     @Test
     void validacao_devolve400ComOErroDeCadaCampo() {
         BeanPropertyBindingResult resultado = new BeanPropertyBindingResult(new TagRequest(""), "tagRequest");
-        resultado.addError(new FieldError("tagRequest", "nome", "Informe o nome da tag"));
+        resultado.addError(new FieldError("tagRequest", "nome", "O nome da tag é obrigatório"));
         resultado.addError(new FieldError("tagRequest", "nome", "outra mensagem do mesmo campo"));
 
         ResponseEntity<ErroResponse> resposta =
                 handler.validacao(new MethodArgumentNotValidException((MethodParameter) null, resultado), request);
 
         assertThat(resposta.getStatusCode().value()).isEqualTo(400);
-        assertThat(resposta.getBody().campos()).containsExactlyEntriesOf(
-                Map.of("nome", "Informe o nome da tag"));
+        assertThat(resposta.getBody().campos())
+                .containsExactly(new CampoErro("nome", "O nome da tag é obrigatório"));
         assertThat(resposta.getBody().caminho()).isEqualTo("/tags");
     }
 
