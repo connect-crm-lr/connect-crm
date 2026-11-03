@@ -1,0 +1,3 @@
+# Os scripts .sh precisam de fim de linha LF para rodar no Linux/WSL,
+# mesmo quando o repositório é clonado no Windows (core.autocrlf).
+*.sh text eol=lf

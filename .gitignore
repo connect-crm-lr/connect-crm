@@ -24,3 +24,6 @@ hs_err_pid*
 replay_pid*
 # Variáveis de ambiente (credenciais locais — nunca versionar)
 .env
+
+# Backups do banco (contêm os dados do sistema — nunca versionar)
+database/backups/
