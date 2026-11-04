@@ -209,6 +209,24 @@ Essas validações ficam no service, porque dependem de outras tabelas.
 - **CI:** todo PR roda build, testes e lint no GitHub Actions. PR com CI vermelho não é mergeado.
 - Comentários explicam a **regra de negócio** ou o motivo de uma decisão, não o óbvio.
 
+### 8.1 Padrões de projeto
+
+O projeto usa só os padrões que já aparecem naturalmente no código (vistos na disciplina de Padrões de Projeto). Não criar padrão onde ele não resolve um problema real.
+
+| Padrão | Onde aparece |
+|---|---|
+| Singleton | beans do Spring (`@Service`, `@Repository`, `@RestController`): uma única instância por aplicação. Não implementar Singleton à mão |
+| Factory Method | métodos estáticos que criam objetos, ex.: `TagResponse.de(tag)`, `ErroResponse.deValidacao(...)` |
+| Iterator | percorrer coleções com for-each ou `stream()` |
+| Decorator | `@Transactional` (o Spring envolve o service num proxy que abre e fecha a transação) |
+
+**Regra:** todo trecho de código novo onde um desses padrões está presente recebe um comentário curto identificando o padrão e o motivo, ex.:
+
+```java
+// Padrão Factory Method: único ponto de conversão da entidade Tag para o DTO de resposta.
+public static TagResponse de(Tag tag) { ... }
+```
+
 ---
 
 ## 9. Escopo do MVP
