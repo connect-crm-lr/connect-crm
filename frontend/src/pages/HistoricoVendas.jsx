@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, CheckCircle, XCircle, FileText, Calendar } from 'lucide-react';
 
 export default function HistoricoVendas() {
