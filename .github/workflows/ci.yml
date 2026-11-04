@@ -116,6 +116,21 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Garante que o Dockerfile do back-end continua construindo (deploy, issue #43).
+  # Só monta a imagem; nada é publicado.
+  docker-backend:
+    name: Back-end (imagem Docker)
+    needs: mudancas
+    if: needs.mudancas.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Construir a imagem (docker build)
+        run: docker build -t connect-crm-backend:ci backend
+
   frontend:
     name: Front-end (lint e build)
     needs: mudancas
