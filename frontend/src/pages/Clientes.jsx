@@ -12,7 +12,7 @@ export default function Clientes() {
     {
       id: 1,
       nome: 'Ateliê Bella Noiva',
-      telefone: '11982345678', 
+      telefone: '5511982345678', 
       telefoneDisplay: '(11) 98234-5678',
       email: 'contato@bellanoiva.com.br',
       documento: '28.947.613/0001-55',
@@ -27,7 +27,7 @@ export default function Clientes() {
     {
       id: 2,
       nome: 'Casa Têxtil Moreno',
-      telefone: '1134567890',
+      telefone: '551134567890',
       telefoneDisplay: '(11) 3456-7890',
       email: 'contato@morenotextil.com.br',
       documento: '12.345.678/0001-99',
@@ -38,7 +38,7 @@ export default function Clientes() {
     {
       id: 3,
       nome: 'Studio Decor SP',
-      telefone: '11976543210',
+      telefone: '5511976543210',
       telefoneDisplay: '(11) 97654-3210',
       email: 'studio@decorsp.com.br',
       documento: '98.765.432/0001-11',
@@ -66,7 +66,7 @@ export default function Clientes() {
     if (selectedTag !== 'Todos') {
       mensagem = `Olá ${cliente.nome}, acabou de chegar um novo mostruário de ${selectedTag}, posso agendar uma visita?`;
     }
-    const url = `https://wa.me/55${cliente.telefone}?text=${encodeURIComponent(mensagem)}`;
+    const url = `https://wa.me/${cliente.telefone}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
   };
 

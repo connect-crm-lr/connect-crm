@@ -5,7 +5,7 @@ export default function Catalogo() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Dados simulados baseados no protótipo do Figma[cite: 5]
+  // Dados simulados baseados no protótipo do Figma
   const [catalogoData, setCatalogoData] = useState([
     {
       id: 1,
@@ -36,7 +36,7 @@ export default function Catalogo() {
     }
   ]);
 
-  // Filtro por nome ou composição (RF08)[cite: 5]
+  // Filtro por nome ou composição (RF08)
   const produtosFiltrados = catalogoData.filter(item => 
     item.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.composicao.toLowerCase().includes(searchTerm.toLowerCase())

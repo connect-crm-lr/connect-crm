@@ -6,7 +6,7 @@ export default function NovoPedido() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Recebe o cliente pré-selecionado caso venha do Funil de Negociações[cite: 4]
+  // Recebe o cliente pré-selecionado caso venha do Funil de Negociações
   const clienteDoFunil = location.state?.clientePreSelecionado || '';
 
   const [cliente, setCliente] = useState(clienteDoFunil);
@@ -48,7 +48,7 @@ export default function NovoPedido() {
     }));
   };
 
-  // Cálculo do total: metragem × preco_metro[cite: 4]
+  // Cálculo do total: metragem × preco_metro
   const valorTotal = itens.reduce((acc, item) => acc + (Number(item.metragem) * Number(item.precoMetro)), 0);
 
   const handleSubmitPedido = (e) => {
