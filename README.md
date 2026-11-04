@@ -89,3 +89,4 @@ As telas abrem em `http://localhost:5173`.
 | [backend/README.md](backend/README.md) | perfis, testes e dados de teste do back-end |
 | [database/README.md](database/README.md) | banco, backup e restauração |
 | [docs/connect-crm-roadmap.md](docs/connect-crm-roadmap.md) | milestones, issues e cronograma |
+| [docs/deploy.md](docs/deploy.md) | como publicar: imagem Docker da API, build do front e variáveis de ambiente |
