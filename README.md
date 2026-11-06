@@ -32,7 +32,7 @@ connect-crm/
 ├── backend/     API REST em Spring Boot (pacote br.com.lrrepresentacoes.connectcrm)
 ├── frontend/    telas em React + Vite
 ├── database/    docker-compose do PostgreSQL, .env.example e scripts de backup
-├── docs/        roadmap e decisões de modelagem do banco
+├── docs/        manual do usuário, roadmap e decisões de modelagem do banco
 ├── .github/     template de PR e workflow de CI
 ├── AGENTS.md    regras técnicas e de negócio
 └── CONTRIBUTING.md  fluxo de Git, commits, labels e PR
@@ -79,10 +79,33 @@ npm run dev
 
 As telas abrem em `http://localhost:5173`.
 
+### 4. Primeiro acesso
+
+Abra `http://localhost:5173` e entre com o usuário inicial criado pela migration V2 (`revendedor@lrrepresentacoes.com.br`). A senha dele é **só de desenvolvimento**: peça para a equipe e troque antes de o sistema entrar em uso. Como usar cada tela está no [manual do usuário](docs/manual/manual-do-usuario.md).
+
+### Problemas comuns
+
+| Sintoma | O que fazer |
+|---|---|
+| `docker compose up` falha com porta em uso | troque o `POSTGRES_PORT` no `database/.env` (ex.: 5433) e suba de novo |
+| O back-end não conecta no banco | confira se o container está `running` (`docker compose ps` em `database/`) e se o `database/.env` existe |
+| `mvnw` sem permissão (Linux/WSL) | rode `chmod +x mvnw` em `backend/` |
+| O front abre, mas sem dados da API | confira se o back-end está rodando em `http://localhost:8080` |
+
+## Versão publicada
+
+> A versão publicada do sistema **ainda não foi definida** pela equipe (hospedagem e endereço). Quando a v1.0.0 for publicada, esta seção recebe o link de acesso e as instruções de login.
+
+| Item | Valor |
+|---|---|
+| Endereço | *a definir* |
+| Versão | *a definir* (ver [CHANGELOG](CHANGELOG.md)) |
+
 ## Documentação
 
 | Documento | Conteúdo |
 |---|---|
+| [docs/manual/manual-do-usuario.md](docs/manual/manual-do-usuario.md) | manual do usuário, com os prints das telas |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | branches, commits, labels, PR e definição de pronto |
 | [AGENTS.md](AGENTS.md) | regras técnicas e de negócio do projeto |
 | [CHANGELOG.md](CHANGELOG.md) | histórico de versões |
