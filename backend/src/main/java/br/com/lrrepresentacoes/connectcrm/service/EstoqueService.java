@@ -77,9 +77,13 @@ public class EstoqueService {
                     + " está desativado. Reative o tecido antes de registrar a entrada.");
         }
 
+        // Garante que a linha existe (sem falhar se outra entrada criou ao mesmo tempo)
+        // e depois a trava para somar com segurança.
         String cor = request.corCodigo().trim();
+        estoqueRepository.criarSeNaoExistir(tecido.getId(), cor);
         Estoque estoque = estoqueRepository.buscarParaAtualizar(tecido.getId(), cor)
-                .orElseGet(() -> estoqueRepository.save(new Estoque(tecido, cor)));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Linha de estoque não encontrada logo após ser criada: tecido " + tecido.getId() + ", cor " + cor));
 
         LocalDate data = request.dataEntrada() != null ? request.dataEntrada() : LocalDate.now(FUSO);
         EntradaEstoque entrada = entradaEstoqueRepository.save(

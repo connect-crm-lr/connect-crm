@@ -58,13 +58,13 @@ class EstoqueIntegrationTest {
         tecidoRepository.flush();
     }
 
-    // CT-RD004-01 + CT-RF010-01: a 1ª entrada cria a linha; a 2ª (mesma cor, outra grafia) soma na mesma linha.
+    // CT-RD004-01 + CT-RF010-01: a 1ª entrada cria a linha; a 2ª (mesma cor) soma na mesma linha.
     @Test
     void registrarEntrada_criaALinhaESomaNaMesmaCorComHistorico() {
         EntradaEstoqueResponse primeira = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
                 linho.getId(), "Off-white", new BigDecimal("15.00"), LocalDate.of(2026, 11, 2)));
         EntradaEstoqueResponse segunda = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "OFF-WHITE", new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
+                linho.getId(), " Off-white ", new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
         estoqueRepository.flush();
 
         assertThat(segunda.idEstoque()).isEqualTo(primeira.idEstoque());
@@ -74,6 +74,18 @@ class EstoqueIntegrationTest {
         assertThat(entradaEstoqueRepository.findByEstoqueIdOrderByDataEntradaDescIdDesc(primeira.idEstoque()))
                 .extracting(e -> e.getMetragem().toPlainString())
                 .containsExactly("50.00", "15.00");
+    }
+
+    // A cor é comparada exatamente, como na uk_estoque_tecido_cor da V1: outra grafia é outra linha.
+    @Test
+    void registrarEntrada_corComOutraGrafia_criaOutraLinha() {
+        EntradaEstoqueResponse minuscula = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Off-white", new BigDecimal("15.00"), null));
+        EntradaEstoqueResponse maiuscula = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "OFF-WHITE", new BigDecimal("50.00"), null));
+
+        assertThat(maiuscula.idEstoque()).isNotEqualTo(minuscula.idEstoque());
+        assertThat(maiuscula.saldoAtual()).isEqualByComparingTo("50.00");
     }
 
     // CT-RF009-01/02: a tela Estoque mostra a linha com o indicador de estoque baixo.

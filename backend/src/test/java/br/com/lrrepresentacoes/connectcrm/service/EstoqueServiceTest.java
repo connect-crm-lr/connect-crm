@@ -13,7 +13,7 @@ import br.com.lrrepresentacoes.connectcrm.repository.EstoqueRepository;
 import br.com.lrrepresentacoes.connectcrm.repository.TecidoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,24 +75,26 @@ class EstoqueServiceTest {
         assertThat(resposta.saldoAtual()).isEqualByComparingTo("65.00");
         assertThat(resposta.metragem()).isEqualByComparingTo("50.00");
         assertThat(resposta.dataEntrada()).isEqualTo(LocalDate.of(2026, 11, 3));
-        verify(estoqueRepository, never()).save(any(Estoque.class));
+        // A cor chega ao banco sem os espaços e com a grafia digitada (comparação exata, V1).
+        verify(estoqueRepository).criarSeNaoExistir(any(), eq("Natural"));
     }
 
-    // CT-RD004-01: cor nova cria a linha com 0 e soma a entrada.
+    // CT-RD004-01: cor nova cria a linha com 0 (no banco, com ON CONFLICT) e soma a entrada.
     @Test
-    void registrarEntrada_corNova_criaALinhaComZeroESoma() {
+    void registrarEntrada_corNova_criaALinhaAntesDeTravarESoma() {
         Tecido tecido = linho();
         when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
-        when(estoqueRepository.buscarParaAtualizar(any(), eq("Cru"))).thenReturn(Optional.empty());
-        when(estoqueRepository.save(any(Estoque.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Cru")))
+                .thenReturn(Optional.of(new Estoque(tecido, "Cru")));
         when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
 
         EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
                 new EntradaEstoqueRequest(1L, "Cru", new BigDecimal("30.50"), null));
 
-        ArgumentCaptor<Estoque> captor = ArgumentCaptor.forClass(Estoque.class);
-        verify(estoqueRepository).save(captor.capture());
-        assertThat(captor.getValue().getCorCodigo()).isEqualTo("Cru");
+        // A criação vem antes do SELECT ... FOR UPDATE, senão a linha nova não seria travada.
+        InOrder ordem = inOrder(estoqueRepository);
+        ordem.verify(estoqueRepository).criarSeNaoExistir(any(), eq("Cru"));
+        ordem.verify(estoqueRepository).buscarParaAtualizar(any(), eq("Cru"));
         assertThat(resposta.saldoAtual()).isEqualByComparingTo("30.50");
     }
 
@@ -122,7 +125,7 @@ class EstoqueServiceTest {
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O tecido Linho Natural está desativado. Reative o tecido antes de registrar a entrada.");
         verify(entradaEstoqueRepository, never()).save(any(EntradaEstoque.class));
-        verify(estoqueRepository, never()).save(any(Estoque.class));
+        verify(estoqueRepository, never()).criarSeNaoExistir(any(), any());
     }
 
     @Test
