@@ -52,6 +52,12 @@ public class GlobalExceptionHandler {
         return resposta(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(CredenciaisInvalidasException.class)
+    public ResponseEntity<ErroResponse> credenciaisInvalidas(CredenciaisInvalidasException ex,
+                                                             HttpServletRequest request) {
+        return resposta(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(RegraNegocioException.class)
     public ResponseEntity<ErroResponse> regraNegocio(RegraNegocioException ex, HttpServletRequest request) {
         return resposta(HttpStatusCode.valueOf(422), ex.getMessage(), request);
