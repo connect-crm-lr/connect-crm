@@ -34,7 +34,7 @@ public class TecidoService {
                     ? tecidoRepository.findAllByOrderByNomeAsc()
                     : tecidoRepository.findByAtivoTrueOrderByNomeAsc();
         } else {
-            String padrao = "%" + busca.trim().toLowerCase(Locale.ROOT) + "%";
+            String padrao = "%" + escaparLike(busca.trim().toLowerCase(Locale.ROOT)) + "%";
             tecidos = tecidoRepository.buscar(padrao, incluirInativos);
         }
         // Padrão Iterator: stream() percorre a lista convertendo cada tecido.
@@ -103,6 +103,15 @@ public class TecidoService {
     private Tecido buscar(Long id) {
         return tecidoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Tecido não encontrado"));
+    }
+
+    /**
+     * No LIKE, '%' e '_' são curingas. A composição costuma ter '%' ("100% Linho"),
+     * então o texto digitado é escapado para ser procurado literalmente.
+     * A barra é escapada primeiro, por ser o próprio caractere de escape (ESCAPE '\' na query).
+     */
+    static String escaparLike(String texto) {
+        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     // Campo opcional enviado em branco é gravado como null, e não como texto vazio.

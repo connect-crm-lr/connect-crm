@@ -62,6 +62,25 @@ class TecidoRepositoryIntegrationTest {
                 .contains("IT Linho Rústico", "IT Linho Antigo");
     }
 
+    // "%" digitado é procurado literalmente: "100%" acha "100% Linho", mas não "Linho misto".
+    @Test
+    void buscar_comPorcentagem_procuraOCaractereLiteralmente() {
+        List<TecidoResponse> resultado = tecidoService.listar("100%", true);
+
+        assertThat(resultado).extracting(TecidoResponse::nome)
+                .contains("IT Linho Rústico", "IT Crepe")
+                .doesNotContain("IT Linho Antigo");
+    }
+
+    // "_" não funciona como curinga de um caractere: "it_linho" não acha "IT Linho Rústico".
+    @Test
+    void buscar_comSublinhado_naoFuncionaComoCuringa() {
+        List<TecidoResponse> resultado = tecidoService.listar("it_linho", true);
+
+        assertThat(resultado).extracting(TecidoResponse::nome)
+                .doesNotContain("IT Linho Rústico", "IT Linho Antigo");
+    }
+
     // CT-RF023-01: tecido desativado sai da listagem padrão.
     @Test
     void listar_padrao_naoMostraDesativados() {

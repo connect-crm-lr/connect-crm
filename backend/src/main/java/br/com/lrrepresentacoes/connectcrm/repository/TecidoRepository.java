@@ -17,11 +17,13 @@ public interface TecidoRepository extends JpaRepository<Tecido, Long> {
 
     /**
      * Busca pelo nome ou pela composição, sem diferenciar maiúsculas (RF-015).
-     * O padrão chega pronto do service: em minúsculas e entre '%' (ex.: "%linho%").
+     * O padrão chega pronto do service: em minúsculas, entre '%' e com '\', '%' e '_'
+     * do texto digitado escapados com '\' (ex.: "100%" vira "%100\%%"), para que esses
+     * caracteres sejam procurados literalmente e não funcionem como curingas.
      */
     @Query("""
             SELECT t FROM Tecido t
-            WHERE (LOWER(t.nome) LIKE :padrao OR LOWER(t.composicao) LIKE :padrao)
+            WHERE (LOWER(t.nome) LIKE :padrao ESCAPE '\\' OR LOWER(t.composicao) LIKE :padrao ESCAPE '\\')
               AND (t.ativo = true OR :incluirInativos = true)
             ORDER BY t.nome
             """)

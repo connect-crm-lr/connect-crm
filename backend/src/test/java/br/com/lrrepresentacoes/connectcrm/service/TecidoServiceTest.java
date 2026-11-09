@@ -72,6 +72,16 @@ class TecidoServiceTest {
         verify(tecidoRepository).buscar("%linho%", false);
     }
 
+    // '%' e '_' digitados na busca são escapados para não funcionarem como curingas do LIKE.
+    @Test
+    void listar_comBuscaComCuringas_escapaPorcentagemSublinhadoEBarra() {
+        when(tecidoRepository.buscar(anyString(), anyBoolean())).thenReturn(List.of());
+
+        tecidoService.listar("100%_a\\b", false);
+
+        verify(tecidoRepository).buscar("%100\\%\\_a\\\\b%", false);
+    }
+
     // CT-RF013-01: só nome e preço obrigatórios; opcionais em branco viram null.
     @Test
     void criar_comCamposOpcionaisEmBranco_gravaNullERemoveEspacosDoNome() {
