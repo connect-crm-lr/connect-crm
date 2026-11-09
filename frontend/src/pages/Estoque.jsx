@@ -61,7 +61,7 @@ export default function Estoque() {
           </thead>
           <tbody>
             {linhasFiltradas.map((item) => {
-              // Regra de Estoque Baixo: < 20 metros[cite: 5]
+              // Regra de Estoque Baixo: < 20 metros
               const isEstoqueBaixo = item.metragem < 20; 
               
               return (
@@ -90,7 +90,7 @@ export default function Estoque() {
         <ModalNovaEntrada 
           onClose={() => setIsModalOpen(false)} 
           onSave={(novaEntrada) => {
-            // Mockup: Adiciona visualmente (na API real a lógica "Registrar entrada de estoque" procuraria a linha existente e somaria)[cite: 5]
+            // Mockup: Adiciona visualmente (na API real a lógica "Registrar entrada de estoque" procuraria a linha existente e somaria)
             setEstoqueData([{...novaEntrada, id: Date.now()}, ...estoqueData]);
             setIsModalOpen(false);
           }} 
@@ -110,7 +110,7 @@ function hojeLocal() {
 
 // Componente do Modal
 function ModalNovaEntrada({ onClose, onSave }) {
-  // O modal pede tecido, cor, metragem e data de entrada[cite: 5]
+  // O modal pede tecido, cor, metragem e data de entrada
   const [tecido, setTecido] = useState('');
   const [cor, setCor] = useState('');
   const [metragem, setMetragem] = useState('');
