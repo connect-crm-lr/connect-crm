@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 /**
  * Saldo em metros de um tecido em uma cor. Existe uma linha por tecido + cor
@@ -39,6 +40,9 @@ public class Estoque {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
 
+    // Mesmo fuso do banco e do Hibernate (AGENTS 4), independente do fuso da JVM.
+    private static final ZoneId FUSO = ZoneId.of("America/Sao_Paulo");
+
     protected Estoque() {
         // exigido pelo JPA
     }
@@ -48,12 +52,12 @@ public class Estoque {
         this.tecido = tecido;
         this.corCodigo = corCodigo;
         this.metragem = BigDecimal.ZERO;
-        this.atualizadoEm = LocalDateTime.now();
+        this.atualizadoEm = LocalDateTime.now(FUSO);
     }
 
     public void somar(BigDecimal metros) {
         this.metragem = this.metragem.add(metros);
-        this.atualizadoEm = LocalDateTime.now();
+        this.atualizadoEm = LocalDateTime.now(FUSO);
     }
 
     public Long getId() {
