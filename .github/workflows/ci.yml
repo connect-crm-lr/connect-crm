@@ -99,6 +99,7 @@ jobs:
           POSTGRES_USER=connectcrm
           POSTGRES_PASSWORD=connectcrm_ci
           POSTGRES_PORT=5432
+          JWT_SECRET=chave_de_teste_do_ci_com_mais_de_32_caracteres
           EOF
 
       - name: Rodar testes (./mvnw test)
