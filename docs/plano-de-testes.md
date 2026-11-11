@@ -56,7 +56,7 @@ Os tipos **U**, **C** e **I** são **automatizados** (rodam no CI). Os tipos **M
 
 | Requisito | Assunto (pelo roadmap) | Issue | Casos |
 |---|---|---|---|
-| RF-001 | Login | 4.2.3, 4.2.4 | CT-RF001-01 a 05 |
+| RF-001 | Login | 4.2.3, 4.2.4 | CT-RF001-01 a 06 |
 | RF-002 | Recuperar senha (plano B) | 4.2.5 | CT-RF002-01, 02 |
 | RF-003, RF-004 | Clientes: cadastrar, listar, buscar, filtrar por tag, editar | 4.3.1, 4.3.3 | CT-RF003-01 a 06, CT-RF004-01 a 03 |
 | RF-005 | Tags | 4.3.2, 4.3.3 | CT-RF005-01 a 06 |
@@ -91,15 +91,16 @@ Os tipos **U**, **C** e **I** são **automatizados** (rodam no CI). Os tipos **M
 
 | ID | Tipo | Status | Passos | Entrada | Resultado esperado |
 |---|---|---|---|---|---|
-| CT-RF001-01 | C | planejado | `POST` de login com credenciais válidas | e-mail e senha do usuário da V2 | 200 com o token/sessão |
-| CT-RF001-02 | C | planejado | `POST` de login com senha errada | senha incorreta | 401, mensagem que não diz se o erro foi no e-mail ou na senha |
-| CT-RF001-03 | C | planejado | chamar um endpoint protegido sem autenticação | — | 401 |
+| CT-RF001-01 | I | **existente** | `SegurancaIntegracaoTest.login_comUsuarioDaV2_devolveTokenQueAbreARotaProtegida` | e-mail e senha do usuário da V2 | 200 com `token`, `tipo: Bearer`, `expiraEmSegundos` e `nome`; o token abre uma rota protegida |
+| CT-RF001-02 | I | **existente** | `SegurancaIntegracaoTest.login_comSenhaErrada_responde401` e `AuthServiceTest.login_comEmailInexistente_daAMesmaMensagemDaSenhaErrada` | senha incorreta; e-mail inexistente | 401 com *E-mail ou senha inválidos*, a mesma mensagem nos dois casos (não diz se o erro foi no e-mail ou na senha) |
+| CT-RF001-03 | I | **existente** | `SegurancaIntegracaoTest.rotaProtegida_semToken_responde401` | `GET /tags` sem o cabeçalho `Authorization` | 401 com a mensagem *Faça login para continuar* |
 | CT-RF001-04 | M | planejado | entrar pela tela de login | credenciais válidas | abre o Dashboard |
 | CT-RF001-05 | M | planejado | abrir `/clientes` direto na barra de endereço, sem login | — | volta para `/login` |
+| CT-RF001-06 | I | **existente** | `SegurancaIntegracaoTest.tokenFalsificado_responde401` | `Authorization: Bearer` com um token falsificado | 401 |
 | CT-RF002-01 | M | planejado | "Esqueci minha senha" com e-mail cadastrado | e-mail da V2 | *"Se o e-mail estiver cadastrado, enviaremos o link"* |
 | CT-RF002-02 | M | planejado | "Esqueci minha senha" com e-mail não cadastrado | `naoexiste@teste.com` | **a mesma** mensagem do CT-RF002-01 |
 | CT-RNF003-01 | I | planejado | ler a coluna `senha_hash` do usuário | — | valor começa com `$2a$` (BCrypt), nunca a senha em texto |
-| CT-RNF003-02 | U | planejado | autenticar usando `passwordEncoder.matches()` | senha correta e incorreta | `true` e `false` |
+| CT-RNF003-02 | U | **existente** | `AuthServiceTest.login_comSenhaCorreta_devolveOTokenBearer` e `AuthServiceTest.login_comSenhaErrada_lancaCredenciaisInvalidasSemGerarToken` | senha correta e incorreta, conferidas com `passwordEncoder.matches()` (BCrypt de verdade no teste) | correta: devolve o token `Bearer`; incorreta: recusa sem gerar token |
 
 ### 6.2 Clientes e tags (RF-003, RF-004, RF-005, RF-020, RF-024, RD-014, RD-015, RD-016)
 
@@ -261,4 +262,3 @@ Os automatizados (U + C + I) somam 76 casos. Os manuais (M + A), 24.
 - **Conferir com a ERS:** o roadmap agrupa as regras do pedido como "RD-003 a 009". Só a RD-008 tem o texto citado (*só cancela pedido não cancelado*). Por isso os casos dessas regras usam o ID de grupo `CT-RD003a009-xx`. Quem cuida da ERS deve trocar cada um pelo RD exato.
 - **RD-001 e RD-002** não aparecem no roadmap. Se forem do MVP, precisam de casos.
 - **RF-002:** o plano segue o plano B decidido em 03/11 (só a tela, sem envio de e-mail).
-- **Prazo dos casos de login:** dependem da decisão JWT ou sessão (issue 4.2.3). Os casos CT-RF001-01 a 03 já valem para as duas opções.
