@@ -244,10 +244,10 @@ Os tipos **U**, **C** e **I** são **automatizados** (rodam no CI). Os tipos **M
 
 | | U | C | I | M | A | Total |
 |---|---|---|---|---|---|---|
-| Casos | 50 | 10 | 16 | 23 | 1 | **100** |
-| Já existentes | 10 | 2 | 0 | 3 | 0 | **15** |
+| Casos | 50 | 7 | 20 | 23 | 1 | **101** |
+| Já existentes | 15 | 4 | 6 | 3 | 0 | **28** |
 
-Os automatizados (U + C + I) somam 76 casos. Os manuais (M + A), 24.
+Os automatizados (U + C + I) somam 77 casos. Os manuais (M + A), 24.
 
 ## 8. Execução e registro
 
