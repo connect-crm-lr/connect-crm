@@ -106,8 +106,10 @@ git push origin v1.0.0
 Conferir:
 
 ```bash
-git describe --tags main   # deve mostrar v1.0.0
+git describe --tags --exact-match main   # deve mostrar exatamente v1.0.0
 ```
+
+Sem o `--exact-match`, o `git describe` mostra algo como `v1.0.0-1-gabc1234` quando a `main` tem commit depois da tag, e a conferência parece certa sem estar. Com ele, o comando dá erro (*no tag exactly matches*) se a tag não estiver no topo da `main`.
 
 ## 7. PR `release/v1.0.0` → `develop`
 
