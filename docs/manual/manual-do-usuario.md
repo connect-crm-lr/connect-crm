@@ -30,7 +30,7 @@ Guia de uso do Connect CRM para a **LR Representações**. Explica cada tela do 
 2. Clique no ícone de olho (👁) se quiser conferir a senha digitada.
 3. Clique em **Entrar**. O sistema abre o Dashboard.
 
-**Esqueci minha senha:** clique no link abaixo do campo de senha. Por segurança, o sistema sempre responde *"Se o e-mail estiver cadastrado, enviaremos o link"*, sem dizer se o e-mail existe ou não.
+**Esqueci minha senha:** o link abaixo do campo de senha mostra a mensagem *"Se o e-mail estiver cadastrado, enviaremos o link"*, sem dizer se o e-mail existe ou não. **Nesta versão, nenhum e-mail é enviado:** o envio do link de recuperação fica para uma versão futura. Se esquecer a senha, peça à equipe para redefini-la.
 
 **Para sair:** use o botão **Sair**, no canto inferior do menu lateral.
 
@@ -264,7 +264,7 @@ Os clientes continuam cadastrados; só o vínculo com a tag foi removido. Crie a
 O tecido pode estar desativado no catálogo ou sem metragem suficiente naquela cor.
 
 **Não lembro a senha.**
-Use **Esqueci minha senha** na tela de login.
+Peça à equipe para redefinir a senha. O link **Esqueci minha senha** ainda não envia e-mail nesta versão.
 
 ---
 
