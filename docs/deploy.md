@@ -163,7 +163,7 @@ Para conferir:
 
 > O Vite grava o `VITE_API_URL` no código **na hora do build**. Mudou o endereço da API? Faça um build novo do front.
 >
-> Em desenvolvimento não é preciso configurar nada: sem a variável, o front usa `http://localhost:8080` (ver `frontend/.env.example`). O endereço fica em `frontend/src/services/api.js`, junto com a função `chamarApi`, que as telas vão usar quando forem ligadas à API.
+> Em desenvolvimento não é preciso configurar nada: sem a variável, o front usa `http://localhost:8080` (ver `frontend/.env.example`). O endereço fica em `frontend/src/services/api.js`, junto com a função `chamarApi`, que as telas vão usar quando forem ligadas à API. Ela envia o token do login no cabeçalho `Authorization` e, se a API responder 401, apaga o login salvo (o token é guardado só por `frontend/src/services/sessao.js`).
 
 ## 5. Ordem do primeiro deploy
 
