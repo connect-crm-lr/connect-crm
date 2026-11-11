@@ -89,6 +89,7 @@ Abra `http://localhost:5173` e entre com o usuário inicial criado pela migratio
 |---|---|
 | `docker compose up` falha com porta em uso | troque o `POSTGRES_PORT` no `database/.env` (ex.: 5433) e suba de novo |
 | O back-end não conecta no banco | confira se o container está `running` (`docker compose ps` em `database/`) e se o `database/.env` existe |
+| O back-end para com erro de `JWT_SECRET` | copie a variável `JWT_SECRET` do `database/.env.example` para o seu `database/.env`. A chave precisa ter pelo menos 32 caracteres |
 | `mvnw` sem permissão (Linux/WSL) | rode `chmod +x mvnw` em `backend/` |
 | O front abre, mas sem dados da API | confira se o back-end está rodando em `http://localhost:8080` |
 
