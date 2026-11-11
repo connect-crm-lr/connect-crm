@@ -3,7 +3,7 @@
 Guia de uso do Connect CRM para a **LR Representações**. Explica cada tela do sistema e como fazer as tarefas do dia a dia: encontrar clientes, chamar no WhatsApp, acompanhar negociações, cadastrar tecidos e registrar a chegada de estoque.
 
 > [!NOTE]
-> **Situação deste manual:** os prints foram feitos nas telas da `develop` em 04/11/2026, que ainda usam **dados de exemplo** (ainda não estão ligadas à API). As seções marcadas com 🚧 descrevem telas que ainda estão em desenvolvimento. No code freeze (23/11), os prints e essas seções devem ser atualizados com a versão 1.0.0 — veja [Como atualizar este manual](#como-atualizar-este-manual).
+> **Situação deste manual:** os prints foram feitos nas telas da `develop` em 11/11/2026, que ainda usam **dados de exemplo** (ainda não estão ligadas à API). As seções marcadas com 🚧 descrevem telas ou partes de tela que ainda estão em desenvolvimento, e as seções de telas já prontas dizem o que ainda falta nelas. No code freeze (23/11), os prints e essas seções devem ser atualizados com a versão 1.0.0 — veja [Como atualizar este manual](#como-atualizar-este-manual).
 
 ## Sumário
 
@@ -14,8 +14,8 @@ Guia de uso do Connect CRM para a **LR Representações**. Explica cada tela do 
 5. [Funil de negociações](#5-funil-de-negociações)
 6. [Catálogo de tecidos](#6-catálogo-de-tecidos)
 7. [Estoque](#7-estoque)
-8. [Novo pedido 🚧](#8-novo-pedido-)
-9. [Histórico de vendas 🚧](#9-histórico-de-vendas-)
+8. [Novo pedido](#8-novo-pedido)
+9. [Histórico de vendas](#9-histórico-de-vendas)
 10. [Dúvidas frequentes](#10-dúvidas-frequentes)
 
 ---
@@ -49,8 +49,8 @@ O menu fica sempre à esquerda e leva a todas as telas. A tela aberta aparece de
 | **Funil** | negociações em andamento, organizadas por etapa |
 | **Catálogo** | tecidos vendidos, com composição, medidas e preço por metro |
 | **Estoque** | metragem disponível de cada tecido em cada cor e registro de chegada |
-| **Novo Pedido** | registrar uma venda 🚧 |
-| **Histórico de Vendas** | vendas por período 🚧 |
+| **Novo Pedido** | registrar uma venda |
+| **Histórico de Vendas** | pedidos feitos, com as ações de marcar como pago e cancelar |
 
 ---
 
@@ -110,18 +110,22 @@ Com uma tag selecionada no filtro, aparece o botão **✕ Excluir tag**. Ao excl
 
 O botão **Novo Cliente** abrirá o cadastro com nome, telefone, e-mail, CPF/CNPJ, cidade/UF e tags. As tags podem ser criadas na hora: se já existir uma tag com o mesmo nome (mesmo com maiúsculas diferentes), o sistema reaproveita a existente.
 
-### 4.6 Ficha do cliente 🚧
+### 4.6 Ficha do cliente
 
-Ao clicar num cliente, a ficha mostra os dados e quatro abas:
+![Ficha do cliente](img/10-ficha-cliente.png)
+
+Clique no cartão de um cliente para abrir a ficha ao lado da lista. Ela mostra o nome, o telefone, o botão **Enviar WhatsApp** (abre a conversa com *"Olá <cliente>, tudo bem?"*) e quatro abas:
 
 | Aba | Conteúdo |
 |---|---|
 | **Dados** | e-mail, CPF/CNPJ, cidade/UF e tags |
-| **Interações** | conversas já feitas (WhatsApp, ligação, visita...) — botão **+ Registrar interação** |
-| **Follow-ups** | próximas ações com data — botão **+ Novo Follow-up** |
-| **Pedidos** | pedidos do cliente |
+| **Interações** 🚧 | conversas já feitas (WhatsApp, ligação, visita...) — botão **+ Registrar interação** |
+| **Follow-ups** 🚧 | próximas ações com data — botão **+ Novo Follow-up** |
+| **Pedidos** 🚧 | pedidos do cliente |
 
-Se o cliente tiver pedido em aberto, um aviso aparece no topo da ficha.
+Se o cliente tiver pedido em aberto, um aviso amarelo aparece no topo da ficha. Para fechar a ficha, clique no **X** no canto superior.
+
+> **O que ainda falta:** a aba **Dados** já funciona. As abas **Interações**, **Follow-ups** e **Pedidos** ainda aparecem vazias, e os botões **+ Registrar interação** e **+ Novo Follow-up** ainda não abrem o cadastro.
 
 ### 4.7 Clientes desativados
 
@@ -204,22 +208,44 @@ Se o tecido já tiver estoque nessa cor, a metragem é **somada** ao saldo. Se f
 
 ---
 
-## 8. Novo pedido 🚧
+## 8. Novo pedido
 
-Tela de registro de venda. Regras que ela vai seguir:
+![Novo pedido](img/11-novo-pedido.png)
+
+Tela de registro de venda, em três partes:
+
+1. **Cliente:** escolha o cliente na lista. Se você veio do Funil (negociação solta em **Fechada**), o cliente já vem escolhido.
+2. **Itens do pedido:** para cada tecido, escolha o **tecido**, confira a **cor/código** e informe a **metragem**. O preço por metro vem do catálogo e o **subtotal** é calculado na hora. Use **+ Adicionar Tecido** para incluir outro item e a lixeira para tirar um item.
+3. **Pagamento e total:** escolha a forma de pagamento (**À Vista**, **Cartão**, **Boleto** ou **Cheque**) e confira o **total do pedido**, que é a soma dos subtotais.
+
+Clique em **Finalizar e Criar Pedido**. O pedido começa como **em aberto** (não pago) e o sistema abre o Histórico de Vendas.
+
+Regras da venda:
 
 - O pedido é de um cliente ativo, com um ou mais itens (tecido + cor + metragem).
 - Só é possível vender o que existe em estoque. Se faltar, o sistema avisa, por exemplo: *"Estoque insuficiente: Linho Bege 102 tem 18 m"*.
 - O mesmo tecido + cor aparece uma vez por pedido: adicionar de novo soma a metragem.
 - O total é calculado pelo sistema (metragem × preço por metro). O preço fica gravado no pedido, então mudar o preço no catálogo não altera pedidos antigos.
 - Ao confirmar, a metragem sai do estoque.
-- **Marcar como pago** encerra a pendência do pedido. **Cancelar pedido** devolve a metragem ao estoque; o cancelamento é definitivo e o pedido continua registrado.
+
+> **O que ainda falta:** a tela usa dados de exemplo e ainda não grava o pedido. O aviso de estoque insuficiente, a soma do tecido + cor repetido e a baixa no estoque passam a valer quando a tela for ligada à API de pedidos.
 
 ---
 
-## 9. Histórico de vendas 🚧
+## 9. Histórico de vendas
 
-Lista as vendas de um período, com o total vendido. Pedidos cancelados não entram no total.
+![Histórico de vendas](img/12-historico-vendas.png)
+
+Lista os pedidos com número, cliente, data, forma de pagamento, valor total e situação (**EM ABERTO**, **PAGO** ou **CANCELADO**).
+
+- **Buscar:** digite o nome do cliente ou o número do pedido.
+- **Filtrar pela situação:** use o seletor ao lado da busca (**Todos os Status**, **Em Aberto**, **Pago** ou **Cancelado**).
+- **Marcar Pago:** aparece nos pedidos em aberto e encerra a pendência do pedido.
+- **Cancelar:** aparece nos pedidos que ainda não foram cancelados. O sistema pede confirmação, devolve a metragem ao estoque e muda a situação para **CANCELADO**. O cancelamento é definitivo, e o pedido continua registrado.
+
+Pedidos cancelados não entram nas vendas do mês nem no total vendido.
+
+> **O que ainda falta:** a tela usa dados de exemplo. Ainda não há o filtro por **período** nem o **total vendido** no período (sem os cancelados), que fazem parte do histórico de vendas da versão 1.0.0.
 
 ---
 
@@ -248,6 +274,6 @@ Para a equipe, no code freeze ou quando uma tela mudar:
 
 1. Suba o sistema seguindo o [README](../../README.md), de preferência com o perfil `dev` (dados de teste).
 2. Abra o navegador em **1440 × 900** (tamanho de referência do layout).
-3. Refaça os prints das telas que mudaram, com os mesmos nomes de arquivo em `docs/manual/img/` (`01-login.png`, `02-dashboard.png`...). Para as telas novas, siga a numeração (`10-novo-pedido.png`...).
+3. Refaça os prints das telas que mudaram, com os mesmos nomes de arquivo em `docs/manual/img/` (`01-login.png`, `02-dashboard.png`...). Para as telas novas, siga a numeração (`13-...png`).
 4. Tire o 🚧 e a seção de *Situação deste manual* quando todas as telas estiverem prontas.
 5. **Não** mostre senhas, e-mails ou telefones reais nos prints.
