@@ -146,13 +146,13 @@ Os tipos **U**, **C** e **I** são **automatizados** (rodam no CI). Os tipos **M
 
 | ID | Tipo | Status | Passos | Entrada | Resultado esperado |
 |---|---|---|---|---|---|
-| CT-RF013-01 | U | planejado | cadastrar tecido só com nome e preço | "Viscose", 29,90 | salvo (demais campos opcionais) |
-| CT-RF013-02 | C | planejado | cadastrar sem preço | preço vazio | 400 com o erro no campo |
-| CT-RF013-03 | C | planejado | cadastrar com preço negativo | -1 | recusado |
+| CT-RF013-01 | U | **existente** | `TecidoServiceTest.criar_comCamposOpcionaisEmBranco_gravaNullERemoveEspacosDoNome` | "Viscose", 29,90 | salvo (demais campos opcionais) |
+| CT-RF013-02 | C | **existente** | `TecidoControllerTest.criar_semPreco_responde400ComOErroDoCampo` | preço vazio | 400 com o erro no campo |
+| CT-RF013-03 | C | **existente** | `TecidoControllerTest.criar_comPrecoNegativo_responde400` | -1 | recusado |
 | CT-RF014-01 | M | planejado | abrir o Catálogo | — | cards com nome, composição, gramatura, largura e preço `R$ 42,50/m` |
 | CT-RF015-01 | U | planejado | buscar por composição | "linho" | retorna os tecidos com "Linho" na composição |
 | CT-RF016-01 | U | planejado | alterar o preço de um tecido | 42,50 → 45,00 | novo preço gravado; pedidos antigos mantêm o preço antigo (ver CT-RD003a009-04) |
-| CT-RF023-01 | U | planejado | desativar e reativar tecido | — | some do catálogo e volta ao reativar |
+| CT-RF023-01 | U | **existente** | `TecidoServiceTest.desativar_tecidoAtivo_marcaComoInativoSemApagar` e `TecidoServiceTest.reativar_tecidoDesativado_marcaComoAtivo` | tecido ativo; depois, desativado | desativado sem apagar o registro (`ativo = false`), some do catálogo e volta (`ativo = true`) ao reativar |
 | CT-RF023-02 | M | planejado | "Excluir" no card do tecido | — | pede confirmação e o tecido é desativado, não apagado |
 
 ### 6.5 Estoque (RF-009, RF-010, RD-004, RD-012, RD-013)
@@ -160,13 +160,13 @@ Os tipos **U**, **C** e **I** são **automatizados** (rodam no CI). Os tipos **M
 | ID | Tipo | Status | Passos | Entrada | Resultado esperado |
 |---|---|---|---|---|---|
 | CT-RF009-01 | U | planejado | consultar estoque | base do perfil `dev` | uma linha por tecido + cor, em metros |
-| CT-RF009-02 | U | planejado | linha com 19,99 m e linha com 20,00 m | — | 19,99 → estoque baixo; 20,00 → **não** (limite `< 20`) |
+| CT-RF009-02 | U | **existente** | `EstoqueServiceTest.listar_marcaEstoqueBaixoSoAbaixoDe20Metros` | linha com 19,99 m e linha com 20,00 m | 19,99 → estoque baixo; 20,00 → **não** (limite `< 20`) |
 | CT-RF009-03 | U | planejado | consultar com tecido desativado | — | linhas desse tecido não aparecem |
-| CT-RF010-01 | I | planejado | registrar entrada de cor já existente | +50 m em linha com 15 m | saldo 65 m e 1 registro novo em `entrada_estoque` |
+| CT-RF010-01 | I | **existente** | `EstoqueIntegrationTest.registrarEntrada_criaALinhaESomaNaMesmaCorComHistorico` | +50 m em linha com 15 m | saldo 65 m e 1 registro novo em `entrada_estoque` |
 | CT-RF010-02 | M | planejado | abrir o modal "Registrar entrada" | — | data de entrada vem preenchida com hoje |
 | CT-RD004-01 | I | planejado | registrar entrada de cor nova | tecido + cor inexistentes | cria a linha (começa em 0) e soma: saldo = metragem da entrada |
-| CT-RD012-01 | U | planejado | registrar entrada para tecido desativado | — | recusado, pedindo para reativar o tecido |
-| CT-RD013-01 | I | planejado | forçar saldo negativo direto no banco | `UPDATE` com metragem -1 | o banco recusa (constraint) |
+| CT-RD012-01 | U | **existente** | `EstoqueServiceTest.registrarEntrada_tecidoDesativado_recusaSemGravarNada` | tecido desativado | recusado, pedindo para reativar o tecido; nada é gravado |
+| CT-RD013-01 | I | **existente** | `EstoqueIntegrationTest.saldoNegativo_oBancoRecusa` | `UPDATE` com metragem -1 | o banco recusa (constraint) |
 
 ### 6.6 Pedidos (RF-008, RF-017, RF-018, RD-003 a RD-009)
 
