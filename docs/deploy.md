@@ -80,7 +80,33 @@ docker run --rm -p 8080:8080 \
 
 (No PowerShell, troque `\` por `` ` `` no fim das linhas. Se o banco local usa a porta 5433, informe `POSTGRES_PORT=5433`.)
 
-Para conferir: o log mostra o Flyway aplicando as migrations e `Started ConnectCrmApplication`. Depois disso, `http://localhost:8080/tags` responde com as tags.
+Para conferir:
+
+1. O log mostra o Flyway aplicando as migrations e `Started ConnectCrmApplication`.
+2. O login com o usuário inicial da V2 devolve o token:
+
+   ```bash
+   curl -X POST http://localhost:8080/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"revendedor@lrrepresentacoes.com.br","senha":"<senha do usuário inicial>"}'
+   ```
+
+   No PowerShell:
+
+   ```powershell
+   Invoke-RestMethod -Method Post -Uri http://localhost:8080/auth/login -ContentType 'application/json' `
+     -Body '{"email":"revendedor@lrrepresentacoes.com.br","senha":"<senha do usuário inicial>"}'
+   ```
+
+   Resposta esperada (200):
+
+   ```json
+   {"token":"eyJ...","tipo":"Bearer","expiraEmSegundos":28800,"nome":"Revendedor LR"}
+   ```
+
+   `expiraEmSegundos` é o `JWT_EXPIRACAO_HORAS` em segundos (8 h = 28800).
+
+> Toda rota fora de `/auth/**` exige o cabeçalho `Authorization: Bearer <token>`. Por isso, abrir `http://localhost:8080/tags` no navegador responde **401** com `"mensagem":"Faça login para continuar"`. Esse 401 em JSON também mostra que a API está no ar: quem respondeu foi o Spring Security da aplicação, não um erro do servidor.
 
 > O build da imagem pula os testes (`-DskipTests`) porque eles precisam do PostgreSQL. Os testes rodam no CI em todo PR, e o CI também confere se a imagem continua construindo (job **Back-end (imagem Docker)**).
 
