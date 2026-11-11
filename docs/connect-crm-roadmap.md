@@ -253,7 +253,7 @@ Legenda dos lados: **back** · **front** · **banco** · **doc** · **equipe**.
 
 | Código | Item | Responsável |
 |---|---|---|
-| 5.4 | Correções do teste de aceitação (só branches `hotfix/`, nada de funcionalidade nova) | equipe |
+| 5.4 | Correções do teste de aceitação: branches `fix/...` criadas a partir da `release/v1.0.0`, com PR para a release, nada de funcionalidade nova. `hotfix/` fica só para o que já está na `main` (ver `docs/processo-release.md`) | equipe |
 | — | **Estudo do código:** cada um apresenta para os outros o módulo que fez, usando os relatórios dos PRs no Obsidian | equipe |
 | 6.3 | Manual do usuário + README final | Maria Eduarda |
 | — | Release: merge `release/v1.0.0` → `main`, tag `v1.0.0`, CHANGELOG | Gabriel |
