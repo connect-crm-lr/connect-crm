@@ -42,6 +42,16 @@ Configurar **no painel da hospedagem**, nunca no repositório:
 | `CORS_ALLOWED_ORIGINS` | `https://connectcrm.exemplo.com` | endereço do front publicado, **sem barra no final**. Mais de um: separar por vírgula |
 | `PORT` | `8080` | porta da API. Muitos serviços definem sozinhos; sem ela, usa 8080 |
 | `JAVA_OPTS` | `-XX:MaxRAMPercentage=75` | opcional, ajuste de memória da JVM |
+| `JWT_SECRET` | *(chave gerada, ver abaixo)* | **obrigatória**: chave que assina o token de login. Sem ela, ou com menos de 32 caracteres, a API não sobe |
+| `JWT_EXPIRACAO_HORAS` | `8` | opcional, quantas horas o login vale; sem ela, 8 |
+
+- **`JWT_SECRET` do servidor:** gere uma chave nova só para a hospedagem, **diferente** da que está no seu `database/.env` local, e não a coloque em nenhum arquivo do repositório:
+
+  ```bash
+  openssl rand -base64 48
+  ```
+
+  (O Git Bash do Windows já traz o `openssl`.) A saída tem 64 caracteres, acima do mínimo de 32 exigido pela assinatura HS256. Trocar a chave depois desloga todo mundo: os tokens antigos deixam de valer.
 
 - **Banco que exige SSL** (comum em bancos gerenciados): em vez de `POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_DB`, use a URL completa em `SPRING_DATASOURCE_URL`, ex.: `jdbc:postgresql://db.exemplo.com:5432/connect_crm?sslmode=require`. Usuário e senha continuam em `POSTGRES_USER` e `POSTGRES_PASSWORD`.
 - **Nunca** ativar o perfil `dev` em produção (`SPRING_PROFILES_ACTIVE` vazio). O perfil `dev` grava os dados de teste da `db/dev`.
@@ -64,6 +74,7 @@ docker run --rm -p 8080:8080 \
   -e POSTGRES_USER=connectcrm \
   -e POSTGRES_PASSWORD=<senha do database/.env> \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+  -e JWT_SECRET=<JWT_SECRET do database/.env> \
   connect-crm-backend
 ```
 
