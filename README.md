@@ -81,7 +81,7 @@ As telas abrem em `http://localhost:5173`.
 
 ### 4. Primeiro acesso
 
-Abra `http://localhost:5173` e entre com o usuário inicial criado pela migration V2 (`revendedor@lrrepresentacoes.com.br`). A senha dele é **só de desenvolvimento**: peça para a equipe e troque antes de o sistema entrar em uso. Como usar cada tela está no [manual do usuário](docs/manual/manual-do-usuario.md).
+Abra `http://localhost:5173` e entre com o usuário inicial criado pela migration V2 (`revendedor@lrrepresentacoes.com.br`). A senha dele é **só de desenvolvimento**: peça para a equipe. Antes de o sistema entrar em uso, ela precisa ser trocada no banco da hospedagem, como explica o [passo a passo do deploy](docs/deploy.md#21-trocar-a-senha-do-usuário-inicial) (não existe tela para trocar a senha nesta versão). Como usar cada tela está no [manual do usuário](docs/manual/manual-do-usuario.md).
 
 ### Problemas comuns
 
