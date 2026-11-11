@@ -24,7 +24,39 @@ navegador ──► front (estático) ──VITE_API_URL──► API (container
 
 1. Criar um PostgreSQL 17 na hospedagem e anotar host, porta, nome do banco, usuário e senha.
 2. **Não** criar tabelas à mão: o Flyway cria tudo quando a API sobe (V1 = 12 tabelas, V2 = usuário inicial e tags de exemplo).
-3. A senha do usuário inicial da V2 é **só de desenvolvimento**. Depois do primeiro deploy, ela precisa ser trocada.
+3. A senha do usuário inicial da V2 é **só de desenvolvimento**. Depois do primeiro deploy, ela precisa ser trocada (seção 2.1).
+
+### 2.1 Trocar a senha do usuário inicial
+
+O MVP não tem tela nem endpoint para trocar a senha (fica para uma versão futura). A troca é feita direto no banco da hospedagem, gravando o **hash BCrypt** da senha nova, nunca a senha em texto. A migration V2 **não** é editada: ela continua com a senha de desenvolvimento, e só o banco do servidor recebe a nova.
+
+1. **Gerar o hash da senha nova.** Com o Docker Desktop aberto, em qualquer pasta:
+
+   ```bash
+   docker run --rm httpd:2.4-alpine htpasswd -nbBC 10 revendedor 'SENHA_NOVA'
+   ```
+
+   Troque `SENHA_NOVA` pela senha escolhida, **entre aspas simples** (funciona igual no Git Bash e no PowerShell). A saída é uma linha assim:
+
+   ```
+   revendedor:$2y$10$...
+   ```
+
+   O hash é **tudo depois de `revendedor:`**: começa com `$2y$10$` e tem 60 caracteres. É BCrypt com custo 10, o mesmo do `BCryptPasswordEncoder` da API, que confere hashes `$2a$`, `$2b$` e `$2y$`. A senha digitada fica no histórico do terminal: feche o terminal depois, ou limpe o histórico.
+
+2. **Gravar no banco da hospedagem**, pelo console SQL do serviço (ou `psql` conectado nele):
+
+   ```sql
+   UPDATE usuario SET senha_hash = '<hash>' WHERE email = 'revendedor@lrrepresentacoes.com.br';
+   ```
+
+   A resposta precisa ser `UPDATE 1`. `UPDATE 0` = e-mail digitado errado.
+
+   > Cuidado com o `$` do hash: dentro de aspas simples no SQL ele é texto comum, mas num `psql -c "..."` com aspas **duplas** o terminal troca `$2y`, `$10`... por variáveis vazias e grava um hash quebrado. Use o console SQL ou o `psql` interativo.
+
+3. **Conferir:** o `POST /auth/login` (seção 3.2), apontando para o endereço da API publicada, devolve 200 com a senha nova e 401 com a antiga.
+
+4. Entregar a senha nova ao revendedor por um canal privado. Ela não vai para o repositório, issues, PRs nem para o Obsidian.
 
 ## 3. API (back-end)
 
@@ -140,7 +172,7 @@ Para conferir:
 3. Publicar o front com `VITE_API_URL` = endereço da API.
 4. Voltar na API e colocar em `CORS_ALLOWED_ORIGINS` o endereço real do front. Reiniciar a API.
 5. Conferir os critérios da seção 6.
-6. Trocar a senha do usuário inicial.
+6. Trocar a senha do usuário inicial (seção 2.1) e conferir o login com a senha nova.
 
 ## 6. Critérios de aceitação da issue #43
 
