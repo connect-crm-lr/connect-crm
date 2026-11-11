@@ -111,21 +111,43 @@ git describe --tags main   # deve mostrar v1.0.0
 
 ## 7. PR `release/v1.0.0` → `develop`
 
-Traz as correções da homologação e o CHANGELOG de volta.
+Traz as correções da homologação e o CHANGELOG de volta. A `release/v1.0.0` é protegida (passo 2): ninguém faz merge nem push direto nela, nem para resolver conflito. O caminho depende de a `develop` ter andado ou não depois do code freeze.
+
+Para saber antes de abrir o PR se vai dar conflito (Git 2.38 ou mais novo):
+
+```bash
+git fetch
+git merge-tree --write-tree --name-only origin/develop origin/release/v1.0.0 > /dev/null && echo "sem conflito" || echo "com conflito"
+```
+
+O próprio GitHub também avisa no PR: *This branch has conflicts that must be resolved*.
+
+**Sem conflito:** abrir o PR direto da release, sem merge local.
+
+- **Título:** `chore(release): traz as correções da v1.0.0 para a develop`
+- **Base:** `develop` · **Compare:** `release/v1.0.0`
+- CI verde, 1 aprovação, merge commit.
+
+**Com conflito:** resolver numa branch criada a partir da release e abrir o PR dessa branch.
 
 ```bash
 git checkout develop
 git pull
 git checkout release/v1.0.0
 git pull
+git checkout -b chore/release-v1.0.0-para-develop
 git merge develop
+# resolva os conflitos, mantendo as correções da release e as mudanças novas da develop
+git add <arquivos resolvidos>
+git commit
+git push -u origin chore/release-v1.0.0-para-develop
 ```
 
-- Se a `develop` andou depois do code freeze, pode dar conflito. **Resolva na release antes de abrir o PR**, mantendo as correções da release e as mudanças novas da `develop`.
-- **Título:** `chore(release): traz as correções da v1.0.0 para a develop`
-- **Base:** `develop` · **Compare:** `release/v1.0.0`
-- CI verde, 1 aprovação, merge commit.
-- Depois do merge, **apagar** a `release/v1.0.0`.
+- **Título:** o mesmo do caso sem conflito.
+- **Base:** `develop` · **Compare:** `chore/release-v1.0.0-para-develop`
+- CI verde, 1 aprovação, merge commit. Depois do merge, apagar a `chore/release-v1.0.0-para-develop`.
+
+Nos dois casos, depois do merge na `develop`, **apagar** a `release/v1.0.0`.
 
 Conferir que nenhuma correção ficou para trás (não deve listar nada):
 
