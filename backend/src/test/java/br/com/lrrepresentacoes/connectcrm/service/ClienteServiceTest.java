@@ -11,6 +11,7 @@ import br.com.lrrepresentacoes.connectcrm.model.Tag;
 import br.com.lrrepresentacoes.connectcrm.model.Usuario;
 import br.com.lrrepresentacoes.connectcrm.repository.ClienteRepository;
 import br.com.lrrepresentacoes.connectcrm.repository.TagRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -61,8 +62,9 @@ class ClienteServiceTest {
 
     // ---------- listar ----------
 
-    // CT-RF003-01 / CT-RF024: a listagem padrão pede só os ativos, sem busca e sem tag.
+    // A listagem padrão pede só os ativos, sem busca e sem tag.
     @Test
+    @DisplayName("CT-RF004-03: a listagem padrão pede só os clientes ativos")
     void listar_padrao_pedeSoAtivosSemFiltro() {
         when(clienteRepository.listar("%", null, false)).thenReturn(List.of(cliente(1L, "Ateliê", null)));
 
@@ -72,8 +74,9 @@ class ClienteServiceTest {
         verify(clienteRepository).listar("%", null, false);
     }
 
-    // CT-RF004-01: a busca vai em minúsculas, entre '%', com curingas escapados; a tag e os inativos repassados.
+    // A busca vai em minúsculas, entre '%', com curingas escapados; a tag e os inativos repassados.
     @Test
+    @DisplayName("CT-RF003-04 / CT-RF004-01: busca por parte do nome e filtro por tag")
     void listar_comBuscaTagEInativos_montaOPadraoEscapado() {
         when(clienteRepository.listar(anyString(), any(), any(Boolean.class))).thenReturn(List.of());
 
@@ -93,8 +96,9 @@ class ClienteServiceTest {
 
     // ---------- criar ----------
 
-    // CT-RF003-02: grava com o usuário logado, telefone só com dígitos e ativo.
+    // Grava com o usuário logado, telefone só com dígitos e ativo.
     @Test
+    @DisplayName("CT-RF003-01 / CT-RF003-03: cadastra o cliente ativo, com o telefone só com dígitos e DDI 55")
     void criar_gravaComUsuarioLogadoETelefoneSoComDigitos() {
         when(usuarioLogadoService.obter()).thenReturn(REVENDEDOR);
         when(clienteRepository.save(any(Cliente.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -154,6 +158,7 @@ class ClienteServiceTest {
 
     // Manter o próprio CPF/CNPJ não é conflito; as tags enviadas substituem as anteriores.
     @Test
+    @DisplayName("CT-RF003-05: editar o cliente grava os novos dados")
     void atualizar_mantendoOProprioCpfCnpj_alteraDadosETrocaAsTags() {
         Cliente existente = cliente(1L, "Nome antigo", "52998224725");
         existente.definirTags(java.util.Set.of(new Tag("Denim")));
@@ -189,6 +194,7 @@ class ClienteServiceTest {
 
     // Critério de aceitação: desativar com pedido em aberto responde 422 (RegraNegocioException) com o que resolver.
     @Test
+    @DisplayName("CT-RF020-02: desativar com pedido EM_ABERTO é recusado com o que resolver")
     void desativar_comPedidoEmAberto_bloqueiaComMensagem() {
         Cliente atelie = cliente(1L, "Ateliê Bella Noiva", null);
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(atelie));
@@ -204,6 +210,7 @@ class ClienteServiceTest {
 
     // Regra 6.5: negociação em andamento (estágio diferente de FECHADA/PERDIDA) também bloqueia.
     @Test
+    @DisplayName("CT-RF020-03: desativar com negociação em andamento é recusado com o que resolver")
     void desativar_comNegociacaoEmAndamento_bloqueiaComMensagem() {
         Cliente atelie = cliente(1L, "Ateliê Bella Noiva", null);
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(atelie));
@@ -226,6 +233,7 @@ class ClienteServiceTest {
     }
 
     @Test
+    @DisplayName("CT-RF020-01: desativar cliente sem pendências marca ativo = false")
     void desativar_semPendencias_desativa() {
         Cliente atelie = cliente(1L, "Ateliê Bella Noiva", null);
         when(clienteRepository.findById(1L)).thenReturn(Optional.of(atelie));
@@ -253,6 +261,7 @@ class ClienteServiceTest {
     // ---------- reativar (RF-024) ----------
 
     @Test
+    @DisplayName("CT-RF024-01: reativar cliente desativado volta para ativo = true")
     void reativar_desativado_voltaAAtivo() {
         Cliente atelie = cliente(1L, "Ateliê Bella Noiva", null);
         atelie.desativar();

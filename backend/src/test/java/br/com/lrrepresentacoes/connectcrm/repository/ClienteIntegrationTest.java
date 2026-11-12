@@ -8,6 +8,7 @@ import br.com.lrrepresentacoes.connectcrm.exception.RegraNegocioException;
 import br.com.lrrepresentacoes.connectcrm.service.ClienteService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -94,8 +95,9 @@ class ClienteIntegrationTest {
                 .extracting(TagResponse::nome).containsExactly("IT Noivas");
     }
 
-    // CT-RF004: busca no nome sem diferenciar maiúsculas.
+    // Busca no nome sem diferenciar maiúsculas.
     @Test
+    @DisplayName("CT-RF003-04: busca por parte do nome sem diferenciar maiúsculas")
     void listar_buscaPeloNomeSemDiferenciarMaiusculas() {
         assertThat(clienteService.listar("BELLA", null, false))
                 .extracting(ClienteResponse::nome)
@@ -105,6 +107,7 @@ class ClienteIntegrationTest {
 
     // Filtro por tag: só quem tem a tag; as tags do cliente vêm na resposta.
     @Test
+    @DisplayName("CT-RF004-01: filtrar por tag traz só os clientes com a tag")
     void listar_filtraPelaTag() {
         Long idEstofaria = moreno.tags().getFirst().id();
 
@@ -119,6 +122,7 @@ class ClienteIntegrationTest {
 
     // Critério de aceitação: a listagem padrão mostra só os ativos; com "inativos", o desativado aparece.
     @Test
+    @DisplayName("CT-RF004-03: o cliente desativado não aparece na listagem padrão")
     void listar_padraoEscondeDesativados_eComInativosMostra() {
         clienteService.desativar(bella.id());
 
@@ -139,6 +143,7 @@ class ClienteIntegrationTest {
 
     // Critério de aceitação: com pedido EM_ABERTO gravado no banco, a desativação é bloqueada.
     @Test
+    @DisplayName("CT-RF020-02: pedido EM_ABERTO gravado no banco bloqueia a desativação")
     void desativar_comPedidoEmAbertoNoBanco_bloqueia() {
         jdbcTemplate.update("INSERT INTO pedido (id_cliente, id_usuario, forma_pagamento, status, total) "
                 + "VALUES (?, ?, 'BOLETO', 'EM_ABERTO', 578.00)", bella.id(), idUsuarioV2());
@@ -150,6 +155,7 @@ class ClienteIntegrationTest {
 
     // Regra 6.5: negociação em andamento bloqueia; FECHADA/PERDIDA e pedido PAGO/CANCELADO não bloqueiam.
     @Test
+    @DisplayName("CT-RF020-03: só negociação em andamento e pedido em aberto bloqueiam a desativação")
     void desativar_soConsideraNegociacoesEmAndamentoEPedidosEmAberto() {
         Long idUsuario = idUsuarioV2();
         jdbcTemplate.update("INSERT INTO negociacao (id_cliente, id_usuario, descricao, estagio) "
@@ -171,6 +177,7 @@ class ClienteIntegrationTest {
 
     // RF-024: o cliente desativado pode ser reativado.
     @Test
+    @DisplayName("CT-RF024-01: o cliente reativado volta a aparecer na lista")
     void reativar_clienteDesativado_voltaParaAListagemPadrao() {
         clienteService.desativar(moreno.id());
         clienteService.reativar(moreno.id());

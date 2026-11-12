@@ -5,6 +5,7 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -45,6 +46,7 @@ class ClienteRequestTest {
 
     // Critério de aceitação: telefone gravado só com dígitos e DDI 55.
     @ParameterizedTest
+    @DisplayName("CT-RF003-03: telefone com máscara fica só com dígitos e DDI 55")
     @ValueSource(strings = {"+55 (62) 99999-8888", "55 62 99999-8888", "5562999998888"})
     void telefoneComMascara_ficaSoComDigitosEValido(String digitado) {
         ClienteRequest request = comTelefoneECpf(digitado, null);
