@@ -8,6 +8,7 @@ import br.com.lrrepresentacoes.connectcrm.exception.RecursoNaoEncontradoExceptio
 import br.com.lrrepresentacoes.connectcrm.exception.RegraNegocioException;
 import br.com.lrrepresentacoes.connectcrm.service.ClienteService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -89,6 +90,18 @@ class ClienteControllerTest {
         assertThat(captor.getValue().telefone()).isEqualTo("5562999998888");
         assertThat(captor.getValue().cpfCnpj()).isEqualTo("11222333000181");
         assertThat(captor.getValue().uf()).isEqualTo("GO");
+    }
+
+    @Test
+    @DisplayName("CT-RF003-02: cadastrar sem nome responde 400 com o erro no campo nome")
+    void criar_semNome_responde400NoCampoNome() throws Exception {
+        mockMvc.perform(post("/clientes").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"nome\": \" \", \"telefone\": \"5562999998888\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campos[0].campo").value("nome"))
+                .andExpect(jsonPath("$.campos[0].mensagem").value("O nome é obrigatório"));
+
+        verify(clienteService, never()).criar(any());
     }
 
     // Telefone sem o DDI 55: 400 com o erro no campo (o front mostra abaixo do campo).

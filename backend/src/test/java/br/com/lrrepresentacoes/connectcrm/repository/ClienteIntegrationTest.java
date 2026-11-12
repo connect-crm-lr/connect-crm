@@ -175,6 +175,16 @@ class ClienteIntegrationTest {
         assertThat(clienteService.desativar(bella.id()).ativo()).isFalse();
     }
 
+    // Regra 6.5: follow-up pendente não bloqueia a desativação (ele só sai de "Pendências de hoje").
+    @Test
+    @DisplayName("CT-RD016-01: desativar cliente com follow-up pendente é permitido")
+    void desativar_comFollowUpPendente_permite() {
+        jdbcTemplate.update("INSERT INTO follow_up (id_cliente, id_usuario, data_prevista, descricao) "
+                + "VALUES (?, ?, CURRENT_DATE, 'IT retornar sobre o mostruário')", bella.id(), idUsuarioV2());
+
+        assertThat(clienteService.desativar(bella.id()).ativo()).isFalse();
+    }
+
     // RF-024: o cliente desativado pode ser reativado.
     @Test
     @DisplayName("CT-RF024-01: o cliente reativado volta a aparecer na lista")
