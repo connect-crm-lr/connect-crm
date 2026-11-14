@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,4 +68,15 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
             """)
     Optional<Estoque> buscarParaAtualizar(@Param("idTecido") Long idTecido,
                                           @Param("corCodigo") String corCodigo);
+
+    /**
+     * Busca as linhas de estoque de um pedido travando-as até o fim da transação
+     * (SELECT ... FOR UPDATE). O segundo pedido da mesma linha espera o primeiro terminar e
+     * só então lê o saldo, já descontado: dois pedidos não vendem o mesmo metro (regra 6.1).
+     * A ordem por id faz todos os pedidos travarem as linhas na mesma sequência, o que evita
+     * deadlock entre dois pedidos com os mesmos tecidos em ordem diferente.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Estoque e WHERE e.id IN :ids ORDER BY e.id")
+    List<Estoque> buscarPorIdsParaAtualizar(@Param("ids") Collection<Long> ids);
 }
