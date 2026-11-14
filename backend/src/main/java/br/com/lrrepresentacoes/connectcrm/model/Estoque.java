@@ -60,6 +60,13 @@ public class Estoque {
         this.atualizadoEm = LocalDateTime.now(FUSO);
     }
 
+    // Baixa da venda. O saldo é conferido antes pelo PedidoService, com a linha travada;
+    // o CHECK metragem >= 0 do banco é a última barreira contra saldo negativo.
+    public void baixar(BigDecimal metros) {
+        this.metragem = this.metragem.subtract(metros);
+        this.atualizadoEm = LocalDateTime.now(FUSO);
+    }
+
     public Long getId() {
         return id;
     }
