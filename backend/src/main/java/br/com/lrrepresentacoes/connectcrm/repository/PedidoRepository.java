@@ -1,12 +1,14 @@
 package br.com.lrrepresentacoes.connectcrm.repository;
 
 import br.com.lrrepresentacoes.connectcrm.model.Pedido;
+import br.com.lrrepresentacoes.connectcrm.model.StatusPedido;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
@@ -19,6 +21,24 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Pedido p WHERE p.id = :id")
     Optional<Pedido> buscarParaAtualizar(@Param("id") Long id);
+
+    /**
+     * Listagem de pedidos (#71), do mais novo para o mais antigo. Filtros opcionais: cliente e status
+     * (null = sem filtro). Pedido CANCELADO aparece na lista com o status (regra 6.2: só fica fora
+     * de vendas do mês, histórico e tarja). Cliente e itens (com estoque e tecido) vêm na mesma
+     * consulta, para montar o PedidoResponse sem uma consulta extra por pedido.
+     */
+    @Query("""
+            SELECT DISTINCT p FROM Pedido p
+            JOIN FETCH p.cliente c
+            LEFT JOIN FETCH p.itens i
+            LEFT JOIN FETCH i.estoque e
+            LEFT JOIN FETCH e.tecido
+            WHERE (:idCliente IS NULL OR c.id = :idCliente)
+              AND (:status IS NULL OR p.status = :status)
+            ORDER BY p.dataPedido DESC, p.id DESC
+            """)
+    List<Pedido> listar(@Param("idCliente") Long idCliente, @Param("status") StatusPedido status);
 
     /*
      * A negociação tem issue própria (funil) e ainda não tem entidade nesta branch; por isso

@@ -47,6 +47,25 @@ public class PedidoService {
     }
 
     /**
+     * Lista os pedidos, mais novos primeiro (#71). Os dois filtros são opcionais e se combinam.
+     * Pedido CANCELADO continua na lista, com o status.
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> listar(Long idCliente, StatusPedido status) {
+        // Padrão Iterator: stream() percorre a lista convertendo cada pedido.
+        return pedidoRepository.listar(idCliente, status).stream()
+                .map(PedidoResponse::de)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PedidoResponse buscarPorId(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Pedido não encontrado"));
+        return PedidoResponse.de(pedido);
+    }
+
+    /**
      * Confirmar pedido (regra 6.1), tudo na mesma transação: ou o pedido, os itens e a baixa
      * do estoque são gravados juntos, ou nada é gravado.
      * 1) cliente e tecidos ativos; 2) pedido de negociação: o cliente é o da negociação;
