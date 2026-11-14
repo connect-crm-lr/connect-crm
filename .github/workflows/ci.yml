@@ -1,12 +1,13 @@
-# CI do Connect CRM: roda build e testes em todo PR e push para develop/main,
-# para que nada quebrado entre sem ninguem perceber.
+# CI do Connect CRM: roda build e testes em todo PR e push para develop/main
+# e para as branches de release (release/v1.0.0...), para que nada quebrado
+# entre sem ninguem perceber. As correcoes da homologacao vao por PR para a release.
 name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, 'release/**']
   push:
-    branches: [develop, main]
+    branches: [develop, main, 'release/**']
 
 # Um push novo no mesmo PR/branch cancela a execucao anterior que ainda estiver rodando.
 concurrency:
