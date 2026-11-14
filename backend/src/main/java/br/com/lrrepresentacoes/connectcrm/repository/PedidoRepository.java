@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface PedidoRepository extends JpaRepository<Pedido, Long> {
@@ -29,4 +31,23 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // Cliente da negociação que originou o pedido (regra 6.1, "Confirmar pedido", passo 2).
     @Query(value = "SELECT id_cliente FROM negociacao WHERE id_negociacao = :idNegociacao", nativeQuery = true)
     Optional<Long> buscarIdClienteDaNegociacao(@Param("idNegociacao") Long idNegociacao);
+
+    /**
+     * Dashboard, "Vendas do mês" (regra 6.2): soma dos totais no período [inicio, fim),
+     * sem os pedidos CANCELADO. COALESCE devolve 0 quando não há venda no período.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(p.total), 0) FROM Pedido p
+            WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
+              AND p.dataPedido >= :inicio AND p.dataPedido < :fim
+            """)
+    BigDecimal somarVendasEntre(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
+
+    // Quantidade de pedidos não cancelados no mesmo período da soma acima.
+    @Query("""
+            SELECT COUNT(p) FROM Pedido p
+            WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
+              AND p.dataPedido >= :inicio AND p.dataPedido < :fim
+            """)
+    long contarVendasEntre(@Param("inicio") LocalDateTime inicio, @Param("fim") LocalDateTime fim);
 }
