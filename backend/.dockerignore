@@ -1,0 +1,6 @@
+# Fica fora do contexto do docker build: artefatos locais e arquivos da IDE.
+target/
+.idea/
+.vscode/
+*.iml
+*.log

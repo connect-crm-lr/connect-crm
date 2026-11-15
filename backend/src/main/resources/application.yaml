@@ -9,7 +9,8 @@ spring:
       - optional:file:./database/.env[.properties]
 
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB}
+    # POSTGRES_HOST: endereço do banco no servidor (local: localhost). Ver docs/deploy.md.
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
 
@@ -23,7 +24,8 @@ spring:
           time_zone: America/Sao_Paulo
 
 server:
-  port: 8080
+  # Serviços de hospedagem costumam informar a porta na variável PORT.
+  port: ${PORT:8080}
 
 # Origens que podem chamar a API (o front em dev roda no Vite, porta 5173).
 # Para mais de uma, separar por virgula na variavel CORS_ALLOWED_ORIGINS.
