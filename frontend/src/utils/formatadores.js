@@ -55,3 +55,18 @@ export function formatarData(dataIso) {
   const [ano, mes, dia] = String(dataIso).slice(0, 10).split('-');
   return `${dia}/${mes}/${ano}`;
 }
+
+// Data e hora de um LocalDateTime da API (ex.: conclusão do follow-up): dd/mm/aaaa HH:mm.
+export function formatarDataHora(dataHoraIso) {
+  if (!dataHoraIso) return '';
+  const hora = String(dataHoraIso).slice(11, 16);
+  return hora ? `${formatarData(dataHoraIso)} ${hora}` : formatarData(dataHoraIso);
+}
+
+// Data de hoje (AAAA-MM-DD) no fuso local; toISOString() usaria UTC e viraria o dia após as 21h no Brasil.
+export function hojeLocal() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}
