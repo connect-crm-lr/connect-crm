@@ -29,7 +29,7 @@ INSERT INTO cliente (id_usuario, nome, telefone, email, cpf_cnpj, cidade, uf, at
 SELECT u.id_usuario, c.nome, c.telefone, c.email, c.cpf_cnpj, c.cidade, c.uf, c.ativo
 FROM usuario u
 CROSS JOIN (VALUES
-    ('Boutique Tecidos da Serra', '5562993456789', 'compras@tecidosdaserra.example.com', '45723174000110', 'Goiânia',   'GO', true),
+    ('Boutique Tecidos da Serra', '5562993456789', 'compras@tecidosdaserra.example.com', NULL,             'Goiânia',   'GO', true),
     ('Ateliê Costura Fina',       '5511987651234', 'atelie@costurafina.example.com',     NULL,             'São Paulo', 'SP', true),
     -- Desativado: mostra a opcao "exibir inativos" e que ele some das pendencias de hoje.
     ('Retalhos Centro Ltda',      '5562984561230', NULL,                                 NULL,             'Anápolis',  'GO', false)
