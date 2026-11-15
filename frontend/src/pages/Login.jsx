@@ -1,25 +1,51 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [errosCampos, setErrosCampos] = useState({});
+  const [aviso, setAviso] = useState('');
+  const { autenticado, entrar } = useAuth();
+  const local = useLocation();
 
-  const handleLogin = (e) => {
+  // Já logado (ou login recém-feito): vai para a página que o usuário tentou abrir, ou para o Dashboard.
+  if (autenticado) {
+    return <Navigate to={local.state?.de || '/dashboard'} replace />;
+  }
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // No futuro, aqui entra a chamada à API do Back-end Java
-    // Simulando o login para avançar:
-    if (email && password) {
-      navigate('/dashboard');
+    setErro('');
+    setErrosCampos({});
+    setAviso('');
+    setEnviando(true);
+    try {
+      await entrar(email, password);
+      // Sem navigate aqui: ao logar, "autenticado" vira true e o redirecionamento acima acontece.
+    } catch (falha) {
+      if (falha.detalhes?.campos?.length) {
+        // Erro de validação (400): cada mensagem aparece abaixo do campo correspondente.
+        setErrosCampos(Object.fromEntries(falha.detalhes.campos.map((c) => [c.campo, c.mensagem])));
+      } else if (falha.status) {
+        // 401 traz "e-mail ou senha incorretos"; mostramos a mensagem da API sem dizer qual campo errou.
+        setErro(falha.message);
+      } else {
+        setErro('Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.');
+      }
+      setEnviando(false);
     }
   };
 
   const handleRecuperarSenha = () => {
-    // Regra: "Se o e-mail estiver cadastrado, enviaremos o link" (Mockup)
-    alert("Se o e-mail estiver cadastrado, enviaremos o link");
+    // Escopo do RF-002 ainda não decidido: por ora, só a mensagem padrão (não envia e-mail).
+    setErro('');
+    setAviso('Se o e-mail estiver cadastrado, enviaremos o link');
   };
 
   return (
@@ -39,38 +65,49 @@ export default function Login() {
         <h2 style={styles.cardTitle}>Bem-vindo de volta</h2>
         <p style={styles.cardSubtitle}>Acesse sua conta para continuar</p>
 
-        <form onSubmit={handleLogin} style={styles.form}>
+        <form onSubmit={handleLogin} style={styles.form} noValidate>
           <div style={styles.inputGroup}>
-            <label style={styles.label}>E-MAIL</label>
+            <label htmlFor="login-email" style={styles.label}>E-MAIL</label>
             <input
+              id="login-email"
               type="email"
+              autoComplete="username"
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
+              style={{ ...styles.input, ...(errosCampos.email ? styles.inputErro : {}) }}
+              aria-invalid={Boolean(errosCampos.email)}
+              aria-describedby={errosCampos.email ? 'login-email-erro' : undefined}
               required
             />
+            {errosCampos.email && <span id="login-email-erro" style={styles.erroCampo}>{errosCampos.email}</span>}
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>SENHA</label>
+            <label htmlFor="login-senha" style={styles.label}>SENHA</label>
             <div style={styles.passwordWrapper}>
               <input
+                id="login-senha"
                 type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={styles.inputPassword}
+                style={{ ...styles.inputPassword, ...(errosCampos.senha ? styles.inputErro : {}) }}
+                aria-invalid={Boolean(errosCampos.senha)}
+                aria-describedby={errosCampos.senha ? 'login-senha-erro' : undefined}
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 style={styles.eyeButton}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {showPassword ? <EyeOff size={20} color="#9CA3AF" /> : <Eye size={20} color="#9CA3AF" />}
               </button>
             </div>
+            {errosCampos.senha && <span id="login-senha-erro" style={styles.erroCampo}>{errosCampos.senha}</span>}
           </div>
 
           <div style={styles.forgotPasswordContainer}>
@@ -83,8 +120,16 @@ export default function Login() {
             </button>
           </div>
 
-          <button type="submit" style={styles.submitButton}>
-            Entrar
+          {/* Mensagem geral (credenciais incorretas, API fora do ar) ou aviso da recuperação de senha */}
+          {erro && <p role="alert" style={styles.erroGeral}>{erro}</p>}
+          {aviso && <p role="status" style={styles.aviso}>{aviso}</p>}
+
+          <button
+            type="submit"
+            disabled={enviando}
+            style={{ ...styles.submitButton, ...(enviando ? styles.submitButtonDesabilitado : {}) }}
+          >
+            {enviando ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
       </div>
@@ -224,5 +269,35 @@ const styles = {
     marginTop: '2rem',
     fontSize: '0.875rem',
     color: '#9CA3AF',
+  },
+  // Mesma propriedade "border" dos campos (e não borderColor), para o React não misturar atalho e propriedade solta.
+  inputErro: {
+    border: '1px solid #DC2626',
+  },
+  erroCampo: {
+    fontSize: '0.8125rem',
+    color: '#B91C1C',
+  },
+  erroGeral: {
+    margin: 0,
+    padding: '0.75rem 1rem',
+    backgroundColor: '#FEF2F2',
+    border: '1px solid #FECACA',
+    borderRadius: '6px',
+    color: '#B91C1C',
+    fontSize: '0.875rem',
+  },
+  aviso: {
+    margin: 0,
+    padding: '0.75rem 1rem',
+    backgroundColor: '#EEF2FF',
+    border: '1px solid #C7D2FE',
+    borderRadius: '6px',
+    color: '#3730A3',
+    fontSize: '0.875rem',
+  },
+  submitButtonDesabilitado: {
+    opacity: 0.6,
+    cursor: 'not-allowed',
   },
 };

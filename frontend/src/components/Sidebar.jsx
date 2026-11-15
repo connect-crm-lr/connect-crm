@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard,
   Users,
@@ -17,8 +18,10 @@ const SIDEBAR_BG = '#01061C';
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const { sair } = useAuth();
 
   const handleLogout = () => {
+    sair();
     navigate('/login');
   };
 
