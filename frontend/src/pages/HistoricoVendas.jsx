@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Calendar, RefreshCw } from 'lucide-react';
+import { FileText, Calendar, RefreshCw, Search } from 'lucide-react';
 import { chamarApi } from '../services/api';
 
 // Histórico de vendas (RF-022): consulta os pedidos por período e status e mostra o total do período.
@@ -41,6 +41,24 @@ const dataIso = (data) =>
 
 const contador = (n, singular, plural) => `${n} ${n === 1 ? singular : plural}`;
 
+// Busca na própria tela: sem diferenciar maiúsculas nem acentos ("atelie" acha "Ateliê").
+// NFD separa a letra do acento, e \p{M} remove os acentos (marcas combinantes).
+const normalizar = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+// A busca vale para o nome do cliente e para o número do pedido.
+// Número aceito como "6", "#P-0006" ou "p-0006" (compara com o id). Outro texto procura no nome
+// e no número formatado ("#p-0006").
+function combinaComBusca(pedido, termo) {
+  const busca = normalizar(termo.trim());
+  if (!busca) return true;
+  const cliente = normalizar(pedido.cliente);
+  const soNumero = busca.match(/^#?p?-?(\d+)$/);
+  if (soNumero) {
+    return Number(soNumero[1]) === pedido.id || cliente.includes(busca);
+  }
+  return cliente.includes(busca) || normalizar(numeroPedido(pedido.id)).includes(busca);
+}
+
 function periodoInicial() {
   const hoje = new Date();
   return {
@@ -66,6 +84,8 @@ export default function HistoricoVendas() {
   const [inicio, setInicio] = useState(() => periodoInicial().inicio);
   const [fim, setFim] = useState(() => periodoInicial().fim);
   const [status, setStatus] = useState('');
+  // Busca por cliente ou número do pedido: filtra só a lista que já veio da API (não chama a API de novo).
+  const [busca, setBusca] = useState('');
   const [tentativa, setTentativa] = useState(0);
   // Resultado da última consulta, com a chave dos filtros a que pertence.
   const [resultado, setResultado] = useState(null);
@@ -93,7 +113,8 @@ export default function HistoricoVendas() {
 
   const atual = !erroPeriodo && resultado?.chave === chave ? resultado : null;
   const carregando = !erroPeriodo && !atual;
-  const pedidos = atual?.pedidos ?? [];
+  const pedidosDoPeriodo = atual?.pedidos ?? [];
+  const pedidos = pedidosDoPeriodo.filter((pedido) => combinaComBusca(pedido, busca));
 
   return (
     <div style={styles.container}>
@@ -103,6 +124,21 @@ export default function HistoricoVendas() {
       </div>
 
       <div style={styles.toolbar}>
+        <div style={{ ...styles.campo, ...styles.campoBusca }}>
+          <label htmlFor="hist-busca" style={styles.label}>Buscar</label>
+          <div style={styles.searchBox}>
+            <Search size={16} color="#9CA3AF" style={styles.searchIcon} />
+            <input
+              id="hist-busca"
+              type="search"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por cliente ou N do pedido..."
+              style={styles.searchInput}
+            />
+          </div>
+        </div>
+
         <div style={styles.campo}>
           <label htmlFor="hist-inicio" style={styles.label}>Data inicial</label>
           <input
@@ -160,6 +196,8 @@ export default function HistoricoVendas() {
               ? `${contador(atual.total.quantidadePedidos, 'pedido', 'pedidos')} no total · pedidos cancelados não entram`
               : 'Pedidos cancelados não entram no total'}
           </span>
+          {/* O total vem da API, para o período e o status; a busca por cliente não o altera. */}
+          <span style={styles.resumoNota}>total do período, sem a busca</span>
         </div>
         <div style={styles.resumoItem}>
           <span style={styles.resumoRotulo}>Na lista</span>
@@ -223,10 +261,18 @@ export default function HistoricoVendas() {
 
         {carregando && <div style={styles.emptyState}><p>Carregando pedidos…</p></div>}
 
-        {atual?.pedidos && pedidos.length === 0 && (
+        {atual?.pedidos && pedidosDoPeriodo.length === 0 && (
           <div style={styles.emptyState}>
             <FileText size={32} color="#9CA3AF" />
             <p>Nenhum pedido encontrado para o período e o status selecionados.</p>
+          </div>
+        )}
+
+        {/* Há pedidos no período, mas nenhum combina com a busca. */}
+        {pedidosDoPeriodo.length > 0 && pedidos.length === 0 && (
+          <div style={styles.emptyState}>
+            <FileText size={32} color="#9CA3AF" />
+            <p>Nenhum pedido encontrado para a busca.</p>
           </div>
         )}
       </div>
@@ -247,6 +293,10 @@ const styles = {
   label: { fontSize: '0.75rem', fontWeight: '600', color: '#374151' },
   input: { padding: '0.6rem 0.75rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' },
   inputErro: { borderColor: '#DC2626' },
+  campoBusca: { flex: 1, minWidth: '280px' },
+  searchBox: { position: 'relative' },
+  searchIcon: { position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' },
+  searchInput: { width: '100%', padding: '0.6rem 1rem 0.6rem 2.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', outline: 'none', backgroundColor: 'white', boxSizing: 'border-box' },
   erroCampo: { fontSize: '0.75rem', color: '#DC2626', maxWidth: '260px' },
   resumo: { display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
   resumoItem: { display: 'flex', flexDirection: 'column', gap: '0.25rem', backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '1rem 1.25rem', minWidth: '220px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
