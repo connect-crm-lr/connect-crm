@@ -72,7 +72,7 @@ export default function Clientes() {
     }
     // wa.me/<telefone> exatamente como gravado (já tem o DDI 55), sem acrescentar nada.
     const url = `https://wa.me/${cliente.telefone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleReativar = async (e, cliente) => {
@@ -318,7 +318,10 @@ function ModalCliente({ cliente, tagsExistentes, onClose, onSaved }) {
     } catch (err) {
       // "campos" da API: cada erro de validação vai abaixo do campo correspondente.
       const campos = err.detalhes?.campos ?? [];
-      if (campos.length > 0) {
+      if (err.status === 409) {
+        // CPF/CNPJ já cadastrado: a API devolve 409 sem "campos"; o erro vai abaixo do campo.
+        setErros({ cpfCnpj: err.message });
+      } else if (campos.length > 0) {
         setErros(Object.fromEntries(campos.map((c) => [c.campo.startsWith('tags') ? 'tags' : c.campo, c.mensagem])));
       } else {
         setErroGeral(err.message);

@@ -28,7 +28,7 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
   const handleWhatsApp = () => {
     // wa.me/<telefone> exatamente como gravado (já tem o DDI 55), sem acrescentar nada.
     const mensagem = encodeURIComponent(`Olá ${cliente.nome}, tudo bem?`);
-    window.open(`https://wa.me/${cliente.telefone}?text=${mensagem}`, '_blank');
+    window.open(`https://wa.me/${cliente.telefone}?text=${mensagem}`, '_blank', 'noopener,noreferrer');
   };
 
   // Desativar pode ser recusado pela API (pedido em aberto ou negociação em andamento): mostra a mensagem dela.
@@ -64,10 +64,13 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
               <p style={styles.telefone}>{formatarTelefone(cliente.telefone)}</p>
               {!cliente.ativo && <span style={styles.inativoBadge}>Inativo</span>}
             </div>
-            <button onClick={handleWhatsApp} style={styles.btnWhatsApp}>
-              <MessageSquare size={16} />
-              Enviar WhatsApp
-            </button>
+            {/* Igual à lista: cliente inativo não recebe contato por WhatsApp. */}
+            {cliente.ativo && (
+              <button onClick={handleWhatsApp} style={styles.btnWhatsApp}>
+                <MessageSquare size={16} />
+                Enviar WhatsApp
+              </button>
+            )}
           </div>
 
           <div style={styles.acoes}>

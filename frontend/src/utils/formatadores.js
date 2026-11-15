@@ -3,7 +3,11 @@ export const soDigitos = (valor) => String(valor ?? '').replace(/\D/g, '');
 
 // Máscara enquanto digita, sem o DDI: (62) 99999-8888 ou (62) 3333-4444.
 export function mascararTelefone(valor) {
-  const d = soDigitos(valor).slice(0, 11);
+  let d = soDigitos(valor);
+  // Número colado com DDI (ex.: 5562999998888): tira o 55 antes de cortar. Com 11 dígitos ou menos
+  // não mexe, porque 55 também é DDD (RS) e o DDI é acrescentado só no envio (telefoneParaApi).
+  if (d.length >= 12 && d.startsWith('55')) d = d.slice(2);
+  d = d.slice(0, 11);
   if (d.length <= 2) return d ? `(${d}` : '';
   const ddd = d.slice(0, 2);
   const resto = d.slice(2);
