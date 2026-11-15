@@ -1,25 +1,36 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, Plus, X } from 'lucide-react';
+import { listarEstoque, registrarEntrada, listarTecidosAtivos } from '../services/estoque';
+
+const formatarMetragem = (valor) =>
+  `${Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} m`;
 
 export default function Estoque() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [estoqueData, setEstoqueData] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Dados simulados baseados no protótipo e na regra de metragem
-  const [estoqueData, setEstoqueData] = useState([
-    { id: 1, tecido: 'Crepe Georgette', cor: 'Off-white', metragem: 245 },
-    { id: 2, tecido: 'Crepe Georgette', cor: 'Rose', metragem: 180 },
-    { id: 3, tecido: 'Linho Natural', cor: 'Natural', metragem: 15 }, // < 20 = BAIXO
-    { id: 4, tecido: 'Suede Automotivo', cor: 'Cinza Chumbo', metragem: 320 },
-    { id: 5, tecido: 'Suede Automotivo', cor: 'Bege', metragem: 140 },
-    { id: 6, tecido: 'Malha Canelada', cor: 'Cru', metragem: 210 },
-    { id: 7, tecido: 'Tule de Festa', cor: 'Marfim', metragem: 8.5 }, // < 20 = BAIXO
-  ]);
+  const carregar = useCallback(async () => {
+    setErro('');
+    try {
+      setEstoqueData(await listarEstoque({ busca: searchTerm.trim() }));
+    } catch (e) {
+      setErro(e.message);
+    } finally {
+      setCarregando(false);
+    }
+  }, [searchTerm]);
 
-  const linhasFiltradas = estoqueData.filter(item => 
-    item.tecido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.cor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // A busca por tecido ou cor é feita pela API; espera o usuário parar de digitar.
+  useEffect(() => {
+    const espera = setTimeout(carregar, 300);
+    return () => clearTimeout(espera);
+  }, [carregar]);
+
+  const total = estoqueData.length;
 
   return (
     <div style={styles.container}>
@@ -27,9 +38,9 @@ export default function Estoque() {
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Estoque</h1>
-          <p style={styles.subtitle}>{estoqueData.length} linhas de estoque</p>
+          <p style={styles.subtitle}>{total} {total === 1 ? 'linha de estoque' : 'linhas de estoque'}</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} style={styles.btnPrimary}>
+        <button onClick={() => { setAviso(''); setIsModalOpen(true); }} style={styles.btnPrimary}>
           <Plus size={18} />
           Registrar entrada
         </button>
@@ -49,6 +60,9 @@ export default function Estoque() {
         </div>
       </div>
 
+      {aviso && <div role="status" style={styles.alertOk}>{aviso}</div>}
+      {erro && <div role="alert" style={styles.alertError}>{erro}</div>}
+
       {/* Tabela de Estoque */}
       <div style={styles.tableContainer}>
         <table style={styles.table}>
@@ -60,40 +74,34 @@ export default function Estoque() {
             </tr>
           </thead>
           <tbody>
-            {linhasFiltradas.map((item) => {
-              // Regra de Estoque Baixo: < 20 metros
-              const isEstoqueBaixo = item.metragem < 20; 
-              
-              return (
-                <tr key={item.id} style={{
-                  ...styles.tr,
-                  backgroundColor: isEstoqueBaixo ? '#FFFBEB' : 'white' // Fundo amarelado para alerta visual
-                }}>
-                  <td style={styles.td}>{item.tecido}</td>
-                  <td style={styles.td}>{item.cor}</td>
-                  <td style={styles.td}>
-                    {item.metragem} m
-                    {isEstoqueBaixo && <span style={styles.badgeBaixo}>BAIXO</span>}
-                  </td>
-                </tr>
-              );
-            })}
+            {estoqueData.map((item) => (
+              // Estoque baixo (< 20 m) vem calculado pela API (regra 6.6); fundo amarelado como alerta visual.
+              <tr key={item.id} style={{ ...styles.tr, backgroundColor: item.estoqueBaixo ? '#FFFBEB' : 'white' }}>
+                <td style={styles.td}>{item.tecido}</td>
+                <td style={styles.td}>{item.corCodigo}</td>
+                <td style={styles.td}>
+                  {formatarMetragem(item.metragem)}
+                  {item.estoqueBaixo && <span style={styles.badgeBaixo}>BAIXO</span>}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
-        {linhasFiltradas.length === 0 && (
+        {carregando && <p style={styles.emptyState}>Carregando estoque...</p>}
+        {!carregando && !erro && total === 0 && (
           <p style={styles.emptyState}>Nenhum item encontrado.</p>
         )}
       </div>
 
       {/* Modal de Nova Entrada */}
       {isModalOpen && (
-        <ModalNovaEntrada 
-          onClose={() => setIsModalOpen(false)} 
-          onSave={(novaEntrada) => {
-            // Mockup: Adiciona visualmente (na API real a lógica "Registrar entrada de estoque" procuraria a linha existente e somaria)
-            setEstoqueData([{...novaEntrada, id: Date.now()}, ...estoqueData]);
+        <ModalNovaEntrada
+          onClose={() => setIsModalOpen(false)}
+          onSaved={(entrada) => {
             setIsModalOpen(false);
-          }} 
+            setAviso(`Entrada registrada: ${formatarMetragem(entrada.metragem)} de ${entrada.tecido} (${entrada.corCodigo}). Saldo atual: ${formatarMetragem(entrada.saldoAtual)}.`);
+            carregar();
+          }}
         />
       )}
     </div>
@@ -108,90 +116,130 @@ function hojeLocal() {
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
-// Componente do Modal
-function ModalNovaEntrada({ onClose, onSave }) {
+// Componente do Modal. Erros de validação aparecem abaixo do campo.
+function ModalNovaEntrada({ onClose, onSaved }) {
   // O modal pede tecido, cor, metragem e data de entrada
-  const [tecido, setTecido] = useState('');
+  const [tecidos, setTecidos] = useState([]);
+  const [idTecido, setIdTecido] = useState('');
   const [cor, setCor] = useState('');
   const [metragem, setMetragem] = useState('');
   const [dataEntrada, setDataEntrada] = useState(hojeLocal);
+  const [erros, setErros] = useState({});
+  const [erroGeral, setErroGeral] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    listarTecidosAtivos()
+      .then(setTecidos)
+      .catch((e) => setErroGeral(e.message));
+  }, []);
+
+  const limparErro = (campo) => setErros((atual) => ({ ...atual, [campo]: undefined }));
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if(tecido && cor && metragem && dataEntrada) {
-      onSave({
-        tecido,
-        cor,
-        metragem: parseFloat(metragem),
-        dataEntrada
+    setErroGeral('');
+
+    const novosErros = {};
+    if (!idTecido) novosErros.idTecido = 'O tecido é obrigatório';
+    if (!cor.trim()) novosErros.corCodigo = 'A cor/código é obrigatória';
+    if (metragem === '' || Number(metragem) <= 0) novosErros.metragem = 'A metragem deve ser maior que zero';
+    if (!dataEntrada) novosErros.dataEntrada = 'A data de entrada é obrigatória';
+    if (Object.keys(novosErros).length > 0) {
+      setErros(novosErros);
+      return;
+    }
+
+    setSalvando(true);
+    try {
+      const entrada = await registrarEntrada({
+        idTecido: Number(idTecido),
+        corCodigo: cor.trim(),
+        metragem: Number(metragem),
+        dataEntrada,
       });
+      onSaved(entrada);
+    } catch (err) {
+      // "campos" da API: cada erro de validação vai abaixo do campo correspondente.
+      const campos = err.detalhes?.campos ?? [];
+      if (campos.length > 0) {
+        setErros(Object.fromEntries(campos.map((c) => [c.campo, c.mensagem])));
+      } else {
+        setErroGeral(err.message);
+      }
+    } finally {
+      setSalvando(false);
     }
   };
+
+  const campoErro = (nome) => erros[nome] && <p role="alert" style={styles.fieldError}>{erros[nome]}</p>;
 
   return (
     <div style={styles.modalOverlay}>
       <div style={styles.modalCard}>
         <div style={styles.modalHeader}>
           <h2 style={styles.modalTitle}>Registrar entrada de estoque</h2>
-          <button onClick={onClose} style={styles.closeBtn}><X size={20} color="#6B7280" /></button>
+          <button type="button" onClick={onClose} aria-label="Fechar" style={styles.closeBtn}><X size={20} color="#6B7280" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} noValidate style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>TECIDO</label>
-            <select 
-              value={tecido} 
-              onChange={(e) => setTecido(e.target.value)}
+            <select
+              value={idTecido}
+              onChange={(e) => { setIdTecido(e.target.value); limparErro('idTecido'); }}
               style={styles.input}
-              required
             >
               <option value="">Selecione o tecido</option>
-              <option value="Crepe Georgette">Crepe Georgette</option>
-              <option value="Linho Natural">Linho Natural</option>
-              <option value="Tule de Festa">Tule de Festa</option>
+              {tecidos.map((t) => (
+                <option key={t.id} value={t.id}>{t.nome}</option>
+              ))}
             </select>
+            {campoErro('idTecido')}
           </div>
 
           <div style={styles.inputGroup}>
             <label style={styles.label}>COR / CÓDIGO</label>
-            <input 
-              type="text" 
-              placeholder="Ex: Off-white, #CR-001" 
+            <input
+              type="text"
+              placeholder="Ex: Off-white, #CR-001"
               value={cor}
-              onChange={(e) => setCor(e.target.value)}
+              onChange={(e) => { setCor(e.target.value); limparErro('corCodigo'); }}
               style={styles.input}
-              required
             />
+            {campoErro('corCodigo')}
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{...styles.inputGroup, flex: 1}}>
+            <div style={{ ...styles.inputGroup, flex: 1 }}>
               <label style={styles.label}>METRAGEM (M)</label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 step="0.01"
-                placeholder="0,00" 
+                placeholder="0,00"
                 value={metragem}
-                onChange={(e) => setMetragem(e.target.value)}
+                onChange={(e) => { setMetragem(e.target.value); limparErro('metragem'); }}
                 style={styles.input}
-                required
               />
+              {campoErro('metragem')}
             </div>
-            <div style={{...styles.inputGroup, flex: 1}}>
+            <div style={{ ...styles.inputGroup, flex: 1 }}>
               <label style={styles.label}>DATA DE ENTRADA</label>
               <input
                 type="date"
                 value={dataEntrada}
-                onChange={(e) => setDataEntrada(e.target.value)}
+                onChange={(e) => { setDataEntrada(e.target.value); limparErro('dataEntrada'); }}
                 style={styles.input}
-                required
               />
+              {campoErro('dataEntrada')}
             </div>
           </div>
 
+          {erroGeral && <p role="alert" style={styles.fieldError}>{erroGeral}</p>}
+
           <div style={styles.modalFooter}>
             <button type="button" onClick={onClose} style={styles.btnCancel}>Cancelar</button>
-            <button type="submit" style={styles.btnSubmit}>Registrar</button>
+            <button type="submit" disabled={salvando} style={styles.btnSubmit}>{salvando ? 'Registrando...' : 'Registrar'}</button>
           </div>
         </form>
       </div>
@@ -210,17 +258,20 @@ const styles = {
   searchBox: { position: 'relative', width: '100%', maxWidth: '400px' },
   searchIcon: { position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' },
   searchInput: { width: '100%', padding: '0.5rem 1rem 0.5rem 2.5rem', border: '1px solid #D1D5DB', borderRadius: '6px', fontSize: '0.875rem', outline: 'none' },
-  tableContainer: { backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', overflow: 'hidden' },
+  tableContainer: { backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
   th: { padding: '1rem', borderBottom: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', letterSpacing: '0.05em' },
   tr: { borderBottom: '1px solid #E5E7EB' },
   td: { padding: '1rem', fontSize: '0.875rem', color: '#111827' },
   badgeBaixo: { backgroundColor: '#FEF3C7', color: '#D97706', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '600', marginLeft: '0.5rem' },
   emptyState: { textAlign: 'center', padding: '2rem', color: '#6B7280', fontSize: '0.875rem' },
-  
+  alertError: { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1rem' },
+  alertOk: { backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1rem' },
+  fieldError: { color: '#DC2626', fontSize: '0.75rem', margin: 0 },
+
   // Estilos do Modal
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 },
-  modalCard: { backgroundColor: 'white', borderRadius: '8px', width: '100%', maxWidth: '500px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' },
+  modalCard: { backgroundColor: 'white', borderRadius: '8px', width: '100%', maxWidth: '500px', padding: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', maxHeight: '90vh', overflowY: 'auto' },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' },
   modalTitle: { fontSize: '1.25rem', fontWeight: '600', color: '#111827', margin: 0 },
   closeBtn: { background: 'none', border: 'none', cursor: 'pointer', padding: 0 },
