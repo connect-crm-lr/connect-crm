@@ -8,6 +8,8 @@ import br.com.lrrepresentacoes.connectcrm.model.Tecido;
 import br.com.lrrepresentacoes.connectcrm.repository.TecidoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -99,6 +101,65 @@ class TecidoServiceTest {
         assertThat(salvo.getFotoUrl()).isNull();
         assertThat(salvo.getPrecoMetro()).isEqualByComparingTo("29.90");
         assertThat(resposta.ativo()).isTrue();
+    }
+
+    // RF-013 / issue #37: foto do tecido guardada como URL.
+    @Test
+    void criar_comFotoUrlValida_gravaAUrlSemEspacos() {
+        when(tecidoRepository.save(any(Tecido.class))).thenAnswer(inv -> inv.getArgument(0));
+        TecidoRequest request = new TecidoRequest("Linho", null, null, null, BigDecimal.TEN,
+                "  https://exemplo.com/fotos/linho.jpg?w=300 ");
+
+        TecidoResponse resposta = tecidoService.criar(request);
+
+        assertThat(resposta.fotoUrl()).isEqualTo("https://exemplo.com/fotos/linho.jpg?w=300");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"linho.jpg", "ftp://exemplo.com/linho.jpg", "https://",
+            "javascript:alert(1)", "http://exemplo com/linho.jpg", "www.exemplo.com/linho.jpg"})
+    void criar_comFotoUrlInvalida_lancaRegraNegocioSemSalvar(String urlInvalida) {
+        TecidoRequest request = new TecidoRequest("Linho", null, null, null, BigDecimal.TEN, urlInvalida);
+
+        assertThatThrownBy(() -> tecidoService.criar(request))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("A URL da foto é inválida: informe um endereço que comece com http:// ou https://");
+        verify(tecidoRepository, never()).save(any(Tecido.class));
+    }
+
+    @Test
+    void atualizar_trocandoAFoto_gravaANovaUrl() {
+        Tecido existente = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        TecidoRequest request = new TecidoRequest("Linho Natural", null, null, null, BigDecimal.TEN,
+                "http://exemplo.com/linho.png");
+
+        tecidoService.atualizar(1L, request);
+
+        assertThat(existente.getFotoUrl()).isEqualTo("http://exemplo.com/linho.png");
+    }
+
+    @Test
+    void atualizar_removendoAFoto_gravaNull() {
+        Tecido existente = new Tecido("Linho Natural", null, null, null, BigDecimal.TEN,
+                "https://exemplo.com/linho.jpg");
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        TecidoRequest request = new TecidoRequest("Linho Natural", null, null, null, BigDecimal.TEN, "  ");
+
+        tecidoService.atualizar(1L, request);
+
+        assertThat(existente.getFotoUrl()).isNull();
+    }
+
+    @Test
+    void atualizar_comFotoUrlInvalida_naoAlteraOTecido() {
+        Tecido existente = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(existente));
+        TecidoRequest request = new TecidoRequest("Outro nome", null, null, null, BigDecimal.TEN, "foto.jpg");
+
+        assertThatThrownBy(() -> tecidoService.atualizar(1L, request))
+                .isInstanceOf(RegraNegocioException.class);
+        assertThat(existente.getNome()).isEqualTo("Linho Natural");
     }
 
     // CT-RF016-01: alterar grava os novos dados no tecido existente.

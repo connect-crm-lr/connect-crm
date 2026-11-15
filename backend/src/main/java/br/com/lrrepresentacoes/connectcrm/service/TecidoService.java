@@ -9,6 +9,8 @@ import br.com.lrrepresentacoes.connectcrm.repository.TecidoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Locale;
 
@@ -54,7 +56,7 @@ public class TecidoService {
                 request.gramatura(),
                 request.largura(),
                 request.precoMetro(),
-                textoOpcional(request.fotoUrl()));
+                fotoUrlValidada(request.fotoUrl()));
         return TecidoResponse.de(tecidoRepository.save(tecido));
     }
 
@@ -71,7 +73,7 @@ public class TecidoService {
                 request.gramatura(),
                 request.largura(),
                 request.precoMetro(),
-                textoOpcional(request.fotoUrl()));
+                fotoUrlValidada(request.fotoUrl()));
         return TecidoResponse.de(tecido);
     }
 
@@ -112,6 +114,32 @@ public class TecidoService {
      */
     static String escaparLike(String texto) {
         return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    /**
+     * A foto do tecido é guardada só como endereço (plano B, sem upload de arquivo).
+     * Aceita apenas URL absoluta http/https com host, para o card do catálogo
+     * conseguir exibir a imagem. Em branco = tecido sem foto (o front mostra a imagem padrão).
+     */
+    static String fotoUrlValidada(String fotoUrl) {
+        String url = textoOpcional(fotoUrl);
+        if (url == null) {
+            return null;
+        }
+        try {
+            URI uri = new URI(url);
+            String esquema = uri.getScheme();
+            boolean webValida = esquema != null
+                    && (esquema.equalsIgnoreCase("http") || esquema.equalsIgnoreCase("https"))
+                    && uri.getHost() != null;
+            if (webValida) {
+                return url;
+            }
+        } catch (URISyntaxException e) {
+            // Cai na mensagem de URL inválida abaixo.
+        }
+        throw new RegraNegocioException(
+                "A URL da foto é inválida: informe um endereço que comece com http:// ou https://");
     }
 
     // Campo opcional enviado em branco é gravado como null, e não como texto vazio.
