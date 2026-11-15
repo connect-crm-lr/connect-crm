@@ -1,13 +1,17 @@
+import { formatarData, formatarDinheiro } from '../utils/formatadores';
+
 // Banner "Este cliente tem pedido em aberto" da ficha do cliente.
-// Fica fora da tela até a API de listagem de pedidos entrar (#71): enquanto "resumo" for null, não aparece.
-// Para ligar: passar { quantidade, valorTotal, numeroCompras, dataUltimaCompra } calculado a partir de GET /pedidos.
+// "resumo" = { quantidade, valorTotal, numeroCompras, dataUltimaCompra }, calculado a partir de GET /pedidos.
+// Sem pedido em aberto (resumo null), não aparece.
 export default function AlertaPedidoEmAberto({ resumo }) {
   if (!resumo) return null;
 
-  const valor = Number(resumo.valorTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const historico = resumo.numeroCompras > 0
+    ? ` - já comprou ${resumo.numeroCompras}x, a última em ${formatarData(resumo.dataUltimaCompra)}`
+    : '';
   return (
     <div style={styles.banner}>
-      Este cliente tem pedido em aberto — {valor} - já comprou {resumo.numeroCompras}x, a última em {resumo.dataUltimaCompra}
+      Este cliente tem {resumo.quantidade} {resumo.quantidade === 1 ? 'pedido' : 'pedidos'} em aberto — {formatarDinheiro(resumo.valorTotal)}{historico}
     </div>
   );
 }
