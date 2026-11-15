@@ -149,22 +149,55 @@ class ListagensIntegrationTest {
     }
 
     @Test
-    @DisplayName("total do período soma só os não cancelados e respeita o filtro de status")
-    void total_somaSemCanceladosNoPeriodo() {
-        pedido(bella, false, LocalDateTime.of(2026, 11, 5, 9, 0));   // EM_ABERTO, 425,00
-        pedido(bella, true, LocalDateTime.of(2026, 11, 6, 9, 0));    // PAGO, 425,00
-        pedido(bella, false, LocalDateTime.of(2026, 11, 7, 9, 0)).cancelar(); // CANCELADO fora do total
-        pedido(bella, false, LocalDateTime.of(2026, 12, 2, 9, 0));   // fora do período
+    @DisplayName("total do período (2030, sem dados da V2): exato, sem cancelado, e respeita o status")
+    void total_somaSemCanceladosNoPeriodoIsolado() {
+        // Cada pedido vale 10 m × 42,50 = 425,00. O ano de 2030 não tem dados da V2 nem de outros testes.
+        pedido(bella, false, LocalDateTime.of(2030, 3, 5, 9, 0));                // EM_ABERTO
+        pedido(bella, true, LocalDateTime.of(2030, 6, 6, 9, 0));                 // PAGO
+        pedido(bella, false, LocalDateTime.of(2030, 9, 7, 9, 0)).cancelar();     // CANCELADO: fora do total
+        pedido(bella, false, LocalDateTime.of(2031, 1, 1, 0, 0));                // fora do período (fim exclusivo)
         gravarELimpar();
-        LocalDateTime inicio = LocalDateTime.of(2026, 11, 1, 0, 0);
-        LocalDateTime fim = LocalDateTime.of(2026, 12, 1, 0, 0);
+        LocalDateTime inicio = LocalDateTime.of(2030, 1, 1, 0, 0);
+        LocalDateTime fimExclusivo = LocalDateTime.of(2031, 1, 1, 0, 0);
 
-        // Filtra pelo período inteiro de novembro: o banco local pode ter outros pedidos nele,
-        // então compara com a diferença causada pelos três pedidos criados aqui.
-        assertThat(pedidoRepository.somarTotalSemCancelados(StatusPedido.PAGO, inicio, fim))
-                .isGreaterThanOrEqualTo(new BigDecimal("425.00"));
-        assertThat(pedidoRepository.contarSemCancelados(null, inicio, fim)).isGreaterThanOrEqualTo(2);
-        assertThat(pedidoRepository.contarSemCancelados(StatusPedido.CANCELADO, inicio, fim)).isZero();
+        assertThat(pedidoRepository.somarTotalSemCancelados(null, inicio, fimExclusivo))
+                .isEqualByComparingTo("850.00");
+        assertThat(pedidoRepository.contarSemCancelados(null, inicio, fimExclusivo)).isEqualTo(2);
+
+        assertThat(pedidoRepository.somarTotalSemCancelados(StatusPedido.PAGO, inicio, fimExclusivo))
+                .isEqualByComparingTo("425.00");
+        assertThat(pedidoRepository.contarSemCancelados(StatusPedido.PAGO, inicio, fimExclusivo)).isEqualTo(1);
+
+        assertThat(pedidoRepository.somarTotalSemCancelados(StatusPedido.EM_ABERTO, inicio, fimExclusivo))
+                .isEqualByComparingTo("425.00");
+
+        // Filtrar por CANCELADO nunca soma nada (o service nem chega a consultar, mas a query também garante).
+        assertThat(pedidoRepository.somarTotalSemCancelados(StatusPedido.CANCELADO, inicio, fimExclusivo)).isNull();
+        assertThat(pedidoRepository.contarSemCancelados(StatusPedido.CANCELADO, inicio, fimExclusivo)).isZero();
+    }
+
+    @Test
+    @DisplayName("total sem início e sem fim (null): soma todos os períodos, sem cancelados")
+    void total_semPeriodo_somaTudoSemCancelados() {
+        // O banco local tem outros pedidos, então mede a diferença causada pelos pedidos criados aqui.
+        BigDecimal somaAntes = somaOuZero(pedidoRepository.somarTotalSemCancelados(null, null, null));
+        long contagemAntes = pedidoRepository.contarSemCancelados(null, null, null);
+
+        pedido(bella, false, LocalDateTime.of(2030, 3, 5, 9, 0));                // EM_ABERTO: entra
+        pedido(bella, true, LocalDateTime.of(2031, 6, 6, 9, 0));                 // PAGO, outro ano: entra
+        pedido(bella, false, LocalDateTime.of(2032, 9, 7, 9, 0)).cancelar();     // CANCELADO: não entra
+        gravarELimpar();
+
+        BigDecimal somaDepois = somaOuZero(pedidoRepository.somarTotalSemCancelados(null, null, null));
+        long contagemDepois = pedidoRepository.contarSemCancelados(null, null, null);
+
+        assertThat(somaDepois.subtract(somaAntes)).isEqualByComparingTo("850.00");
+        assertThat(contagemDepois - contagemAntes).isEqualTo(2);
+    }
+
+    // A soma vem null quando não há nenhum pedido (o service troca por zero).
+    private static BigDecimal somaOuZero(BigDecimal soma) {
+        return soma == null ? BigDecimal.ZERO : soma;
     }
 
     @Test
