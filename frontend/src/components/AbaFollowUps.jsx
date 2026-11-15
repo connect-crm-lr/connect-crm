@@ -11,6 +11,7 @@ export default function AbaFollowUps({ idCliente }) {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
+  const [concluindoId, setConcluindoId] = useState(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -22,12 +23,17 @@ export default function AbaFollowUps({ idCliente }) {
   }, [idCliente]);
 
   const concluir = async (followUp) => {
+    // Duplo clique mandaria 2 PATCH e o 2º voltaria erro ("já foi concluído"): ignora enquanto um está em andamento.
+    if (concluindoId) return;
+    setConcluindoId(followUp.id);
     setErro('');
     try {
       const atualizado = await concluirFollowUp(followUp.id);
       setFollowUps((atual) => atual.map((f) => (f.id === atualizado.id ? atualizado : f)));
     } catch (e) {
       setErro(e.message);
+    } finally {
+      setConcluindoId(null);
     }
   };
 
@@ -44,7 +50,8 @@ export default function AbaFollowUps({ idCliente }) {
       <button style={s.btnAcao} onClick={() => setModalAberto(true)}>+ Novo Follow-up</button>
       {erro && <p role="alert" style={s.erro}>{erro}</p>}
       {carregando && <p style={s.placeholder}>Carregando follow-ups...</p>}
-      {!carregando && !erro && followUps.length === 0 && <p style={s.placeholder}>Nenhuma pendência.</p>}
+      {!carregando && !erro && followUps.length === 0 && <p style={s.placeholder}>Nenhum follow-up registrado.</p>}
+      {!carregando && pendentes.length === 0 && concluidos.length > 0 && <p style={s.placeholder}>Nenhuma pendência.</p>}
 
       {pendentes.length > 0 && <p style={s.secao}>PENDENTES</p>}
       <div style={s.lista}>
@@ -61,7 +68,9 @@ export default function AbaFollowUps({ idCliente }) {
             </div>
             <p style={s.itemTexto}>{f.descricao}</p>
             <div style={{ marginTop: '0.5rem' }}>
-              <button style={s.btnConcluir} onClick={() => concluir(f)}>Concluir</button>
+              <button style={s.btnConcluir} disabled={concluindoId === f.id} onClick={() => concluir(f)}>
+                {concluindoId === f.id ? 'Concluindo...' : 'Concluir'}
+              </button>
             </div>
           </div>
         ))}
