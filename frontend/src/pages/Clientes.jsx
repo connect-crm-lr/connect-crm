@@ -138,7 +138,7 @@ export default function Clientes() {
         <div style={styles.tagFilter}>
           <button
             onClick={() => setIdTagSelecionada(null)}
-            style={{ ...styles.chip, ...(idTagSelecionada === null ? styles.chipAtivo : {}) }}
+            style={{ ...styles.chip, padding: '0.3rem 0.75rem', ...(idTagSelecionada === null ? styles.chipAtivo : {}) }}
           >
             Todos
           </button>
