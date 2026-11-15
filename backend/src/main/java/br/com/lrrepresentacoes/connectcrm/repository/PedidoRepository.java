@@ -31,6 +31,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
      * último dia entrar inteiro. Pedido CANCELADO aparece na lista com o status (regra 6.2: só fica
      * fora de vendas do mês, histórico e tarja). Cliente e itens (com estoque e tecido) vêm na mesma
      * consulta, para montar o PedidoResponse sem uma consulta extra por pedido.
+     * O CAST nas datas é necessário no PostgreSQL: um parâmetro de data null usado só em "IS NULL"
+     * não tem tipo definido ("could not determine data type of parameter"); com o CAST ele tem.
      */
     @Query("""
             SELECT DISTINCT p FROM Pedido p
@@ -40,8 +42,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             LEFT JOIN FETCH e.tecido
             WHERE (:idCliente IS NULL OR c.id = :idCliente)
               AND (:status IS NULL OR p.status = :status)
-              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
-              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
+              AND (CAST(:inicio AS LocalDateTime) IS NULL OR p.dataPedido >= :inicio)
+              AND (CAST(:fimExclusivo AS LocalDateTime) IS NULL OR p.dataPedido < :fimExclusivo)
             ORDER BY p.dataPedido DESC, p.id DESC
             """)
     List<Pedido> listar(@Param("idCliente") Long idCliente, @Param("status") StatusPedido status,
@@ -56,8 +58,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             SELECT SUM(p.total) FROM Pedido p
             WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
               AND (:status IS NULL OR p.status = :status)
-              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
-              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
+              AND (CAST(:inicio AS LocalDateTime) IS NULL OR p.dataPedido >= :inicio)
+              AND (CAST(:fimExclusivo AS LocalDateTime) IS NULL OR p.dataPedido < :fimExclusivo)
             """)
     BigDecimal somarTotalSemCancelados(@Param("status") StatusPedido status,
                                        @Param("inicio") LocalDateTime inicio,
@@ -68,8 +70,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             SELECT COUNT(p) FROM Pedido p
             WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
               AND (:status IS NULL OR p.status = :status)
-              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
-              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
+              AND (CAST(:inicio AS LocalDateTime) IS NULL OR p.dataPedido >= :inicio)
+              AND (CAST(:fimExclusivo AS LocalDateTime) IS NULL OR p.dataPedido < :fimExclusivo)
             """)
     long contarSemCancelados(@Param("status") StatusPedido status,
                              @Param("inicio") LocalDateTime inicio,
