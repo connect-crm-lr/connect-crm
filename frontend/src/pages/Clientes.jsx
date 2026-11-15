@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Search, Plus, MessageSquare, X } from 'lucide-react';
 import FichaCliente from '../components/FichaCliente';
 import { listarClientes, criarCliente, atualizarCliente, reativarCliente } from '../services/clientes';
+import { listarPedidos } from '../services/pedidos';
 import { listarTags, consultarUsoTag, excluirTag } from '../services/tags';
 import {
   formatarTelefone,
@@ -18,6 +19,7 @@ export default function Clientes() {
   const [idTagSelecionada, setIdTagSelecionada] = useState(null); // null = "Todos"
   const [mostrarInativos, setMostrarInativos] = useState(false);
   const [clientes, setClientes] = useState([]);
+  const [comPedidoEmAberto, setComPedidoEmAberto] = useState(new Set()); // ids dos clientes com pedido EM_ABERTO
   const [tags, setTags] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -35,11 +37,17 @@ export default function Clientes() {
   const carregarClientes = useCallback(async () => {
     setErro('');
     try {
-      setClientes(await listarClientes({
-        busca: searchTerm.trim(),
-        idTag: idTagSelecionada,
-        incluirInativos: mostrarInativos,
-      }));
+      // A tarja "Pedido em aberto" é calculada por consulta (regra 6.2): pedidos EM_ABERTO de todos os clientes.
+      const [lista, emAberto] = await Promise.all([
+        listarClientes({
+          busca: searchTerm.trim(),
+          idTag: idTagSelecionada,
+          incluirInativos: mostrarInativos,
+        }),
+        listarPedidos({ status: 'EM_ABERTO' }),
+      ]);
+      setClientes(lista);
+      setComPedidoEmAberto(new Set(emAberto.map((p) => p.idCliente)));
     } catch (e) {
       setErro(e.message);
     } finally {
@@ -177,6 +185,7 @@ export default function Clientes() {
               >
                 <div style={styles.cardHeader}>
                   <h2 style={styles.clientName}>{cliente.nome}</h2>
+                  {comPedidoEmAberto.has(cliente.id) && <span style={styles.badgeWarning}>Pedido em aberto</span>}
                   {!cliente.ativo && <span style={styles.badgeInativo}>Inativo</span>}
                 </div>
 
@@ -448,6 +457,7 @@ const styles = {
   card: { backgroundColor: 'white', borderRadius: '8px', padding: '1.25rem', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', cursor: 'pointer', transition: 'all 0.2s', borderStyle: 'solid' },
   cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' },
   clientName: { fontSize: '1rem', fontWeight: '600', color: '#111827', margin: 0 },
+  badgeWarning: { backgroundColor: '#FEF3C7', color: '#D97706', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500' },
   badgeInativo: { backgroundColor: '#F3F4F6', color: '#6B7280', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '500' },
   clientPhone: { fontSize: '0.875rem', color: '#6B7280', margin: '0 0 1rem 0' },
   cardFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
