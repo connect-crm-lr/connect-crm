@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 // Padrão Singleton: bean do Spring, uma única instância na aplicação.
 @Service
@@ -32,6 +33,15 @@ public class NegociacaoService {
         this.negociacaoRepository = negociacaoRepository;
         this.clienteRepository = clienteRepository;
         this.usuarioLogadoService = usuarioLogadoService;
+    }
+
+    /** Lista as negociações de todas as etapas para o kanban, com filtro opcional por cliente (#71). */
+    @Transactional(readOnly = true)
+    public List<NegociacaoResponse> listar(Long idCliente) {
+        // Padrão Iterator: stream() percorre a lista convertendo cada negociação.
+        return negociacaoRepository.listar(idCliente).stream()
+                .map(NegociacaoResponse::de)
+                .toList();
     }
 
     /**
