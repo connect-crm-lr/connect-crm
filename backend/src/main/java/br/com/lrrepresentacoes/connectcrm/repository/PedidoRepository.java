@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,9 +25,11 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Optional<Pedido> buscarParaAtualizar(@Param("id") Long id);
 
     /**
-     * Listagem de pedidos (#71), do mais novo para o mais antigo. Filtros opcionais: cliente e status
-     * (null = sem filtro). Pedido CANCELADO aparece na lista com o status (regra 6.2: só fica fora
-     * de vendas do mês, histórico e tarja). Cliente e itens (com estoque e tecido) vêm na mesma
+     * Listagem de pedidos (#71 e #49), do mais novo para o mais antigo. Filtros opcionais, todos
+     * null = sem filtro: cliente, status e período. O período é sobre data_pedido, com início
+     * inclusivo e fim EXCLUSIVO: o service passa o dia seguinte à data final à meia-noite, para o
+     * último dia entrar inteiro. Pedido CANCELADO aparece na lista com o status (regra 6.2: só fica
+     * fora de vendas do mês, histórico e tarja). Cliente e itens (com estoque e tecido) vêm na mesma
      * consulta, para montar o PedidoResponse sem uma consulta extra por pedido.
      */
     @Query("""
@@ -36,9 +40,40 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
             LEFT JOIN FETCH e.tecido
             WHERE (:idCliente IS NULL OR c.id = :idCliente)
               AND (:status IS NULL OR p.status = :status)
+              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
+              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
             ORDER BY p.dataPedido DESC, p.id DESC
             """)
-    List<Pedido> listar(@Param("idCliente") Long idCliente, @Param("status") StatusPedido status);
+    List<Pedido> listar(@Param("idCliente") Long idCliente, @Param("status") StatusPedido status,
+                        @Param("inicio") LocalDateTime inicio,
+                        @Param("fimExclusivo") LocalDateTime fimExclusivo);
+
+    /**
+     * Total do período para o histórico de vendas (#49, RF-022): soma só pedidos que NÃO são
+     * CANCELADO (regra 6.2). Sem pedidos, a soma é null (o service troca por zero).
+     */
+    @Query("""
+            SELECT SUM(p.total) FROM Pedido p
+            WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
+              AND (:status IS NULL OR p.status = :status)
+              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
+              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
+            """)
+    BigDecimal somarTotalSemCancelados(@Param("status") StatusPedido status,
+                                       @Param("inicio") LocalDateTime inicio,
+                                       @Param("fimExclusivo") LocalDateTime fimExclusivo);
+
+    // Mesmo filtro da soma: quantos pedidos entraram no total.
+    @Query("""
+            SELECT COUNT(p) FROM Pedido p
+            WHERE p.status <> br.com.lrrepresentacoes.connectcrm.model.StatusPedido.CANCELADO
+              AND (:status IS NULL OR p.status = :status)
+              AND (:inicio IS NULL OR p.dataPedido >= :inicio)
+              AND (:fimExclusivo IS NULL OR p.dataPedido < :fimExclusivo)
+            """)
+    long contarSemCancelados(@Param("status") StatusPedido status,
+                             @Param("inicio") LocalDateTime inicio,
+                             @Param("fimExclusivo") LocalDateTime fimExclusivo);
 
     /*
      * A negociação tem issue própria (funil) e ainda não tem entidade nesta branch; por isso

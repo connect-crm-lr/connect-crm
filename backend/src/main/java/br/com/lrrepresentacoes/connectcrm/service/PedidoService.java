@@ -3,6 +3,7 @@ package br.com.lrrepresentacoes.connectcrm.service;
 import br.com.lrrepresentacoes.connectcrm.dto.ItemPedidoRequest;
 import br.com.lrrepresentacoes.connectcrm.dto.PedidoRequest;
 import br.com.lrrepresentacoes.connectcrm.dto.PedidoResponse;
+import br.com.lrrepresentacoes.connectcrm.dto.TotalPedidosResponse;
 import br.com.lrrepresentacoes.connectcrm.exception.RecursoNaoEncontradoException;
 import br.com.lrrepresentacoes.connectcrm.exception.RegraNegocioException;
 import br.com.lrrepresentacoes.connectcrm.model.Cliente;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -47,15 +49,49 @@ public class PedidoService {
     }
 
     /**
-     * Lista os pedidos, mais novos primeiro (#71). Os dois filtros são opcionais e se combinam.
+     * Lista os pedidos, mais novos primeiro (#71 e #49). Cliente, status e período são opcionais
+     * e se combinam. As datas são inclusivas: o pedido feito em qualquer hora do dia "fim" entra.
      * Pedido CANCELADO continua na lista, com o status.
      */
     @Transactional(readOnly = true)
-    public List<PedidoResponse> listar(Long idCliente, StatusPedido status) {
+    public List<PedidoResponse> listar(Long idCliente, StatusPedido status, LocalDate inicio, LocalDate fim) {
+        validarPeriodo(inicio, fim);
         // Padrão Iterator: stream() percorre a lista convertendo cada pedido.
-        return pedidoRepository.listar(idCliente, status).stream()
+        return pedidoRepository.listar(idCliente, status, comecoDoDia(inicio), comecoDoDiaSeguinte(fim)).stream()
                 .map(PedidoResponse::de)
                 .toList();
+    }
+
+    /**
+     * Total do histórico de vendas (#49, RF-022): soma só os pedidos que não são CANCELADO
+     * (regra 6.2). Filtrar por status CANCELADO resulta em total 0, porque cancelado nunca soma.
+     */
+    @Transactional(readOnly = true)
+    public TotalPedidosResponse totalDoPeriodo(StatusPedido status, LocalDate inicio, LocalDate fim) {
+        validarPeriodo(inicio, fim);
+        if (status == StatusPedido.CANCELADO) {
+            return TotalPedidosResponse.vazio();
+        }
+        LocalDateTime de = comecoDoDia(inicio);
+        LocalDateTime ate = comecoDoDiaSeguinte(fim);
+        BigDecimal total = pedidoRepository.somarTotalSemCancelados(status, de, ate);
+        long quantidade = pedidoRepository.contarSemCancelados(status, de, ate);
+        return new TotalPedidosResponse(total == null ? BigDecimal.ZERO.setScale(2) : total, quantidade);
+    }
+
+    private static void validarPeriodo(LocalDate inicio, LocalDate fim) {
+        if (inicio != null && fim != null && inicio.isAfter(fim)) {
+            throw new RegraNegocioException("A data inicial não pode ser depois da data final");
+        }
+    }
+
+    private static LocalDateTime comecoDoDia(LocalDate data) {
+        return data == null ? null : data.atStartOfDay();
+    }
+
+    // Fim exclusivo na consulta: "até 30/11" vira "antes de 01/12 00:00", incluindo o dia 30 inteiro.
+    private static LocalDateTime comecoDoDiaSeguinte(LocalDate data) {
+        return data == null ? null : data.plusDays(1).atStartOfDay();
     }
 
     @Transactional(readOnly = true)
