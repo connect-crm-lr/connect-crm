@@ -40,7 +40,16 @@ export function formatarDocumento(valor) {
   return d;
 }
 
-// Datas: a API manda 'AAAA-MM-DD'; a tela mostra dd/mm/aaaa. Sem usar Date, para o fuso não mudar o dia.
+// Dinheiro: R$ 34,00. Número do pedido: #P-0000. Metragem: 12,5 m. Datas: dd/mm/aaaa.
+export const formatarDinheiro = (valor) =>
+  Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export const formatarNumeroPedido = (id) => `#P-${String(id).padStart(4, '0')}`;
+
+export const formatarMetragem = (valor) =>
+  `${Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} m`;
+
+// A API manda 'AAAA-MM-DD' ou 'AAAA-MM-DDTHH:mm:ss'; a tela mostra dd/mm/aaaa, sem Date (o fuso não muda o dia).
 export function formatarData(dataIso) {
   if (!dataIso) return '';
   const [ano, mes, dia] = String(dataIso).slice(0, 10).split('-');

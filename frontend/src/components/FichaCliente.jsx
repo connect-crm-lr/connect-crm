@@ -3,13 +3,27 @@ import { MessageSquare, X } from 'lucide-react';
 import AlertaPedidoEmAberto from './AlertaPedidoEmAberto';
 import AbaInteracoes from './AbaInteracoes';
 import AbaFollowUps from './AbaFollowUps';
+import AbaPedidos from './AbaPedidos';
 import { buscarCliente, desativarCliente, reativarCliente } from '../services/clientes';
+import { listarPedidos } from '../services/pedidos';
 import { formatarDocumento, formatarTelefone } from '../utils/formatadores';
 
-// A aba "Pedidos" e o banner de pedido em aberto dependem da listagem de pedidos (#71).
-// Para ligar: incluir 'Pedidos' em ABAS, renderizar a aba e passar o resumo ao AlertaPedidoEmAberto.
-const ABAS = ['Dados', 'Interações', 'Follow-ups'];
-const RESUMO_PEDIDOS = null;
+const ABAS = ['Dados', 'Interações', 'Follow-ups', 'Pedidos'];
+
+// Resumo do banner "Pedido em aberto", calculado por consulta (regra 6.2): valor e quantidade dos EM_ABERTO;
+// nº de compras e última compra consideram só os pedidos não cancelados.
+function calcularResumo(pedidos) {
+  const emAberto = pedidos.filter((p) => p.status === 'EM_ABERTO');
+  if (emAberto.length === 0) return null;
+  const compras = pedidos.filter((p) => p.status !== 'CANCELADO');
+  const ultima = compras.map((p) => p.dataPedido).sort().at(-1);
+  return {
+    quantidade: emAberto.length,
+    valorTotal: emAberto.reduce((soma, p) => soma + Number(p.total), 0),
+    numeroCompras: compras.length,
+    dataUltimaCompra: ultima,
+  };
+}
 
 // A ficha lê o cliente da API ao abrir (o pai usa key={id} para recarregar ao trocar de cliente).
 export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado }) {
@@ -17,6 +31,9 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
   const [cliente, setCliente] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [pedidos, setPedidos] = useState([]);
+  const [carregandoPedidos, setCarregandoPedidos] = useState(true);
+  const [erroPedidos, setErroPedidos] = useState('');
 
   useEffect(() => {
     let cancelado = false;
@@ -24,8 +41,18 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
       .then((dados) => { if (!cancelado) setCliente(dados); })
       .catch((e) => { if (!cancelado) setErro(e.message); })
       .finally(() => { if (!cancelado) setCarregando(false); });
+    listarPedidos({ idCliente })
+      .then((dados) => { if (!cancelado) setPedidos(dados); })
+      .catch((e) => { if (!cancelado) setErroPedidos(e.message); })
+      .finally(() => { if (!cancelado) setCarregandoPedidos(false); });
     return () => { cancelado = true; };
   }, [idCliente]);
+
+  // Depois de pagar ou cancelar: recarrega os pedidos (banner e aba) e avisa a lista de clientes.
+  const recarregarPedidos = async () => {
+    setPedidos(await listarPedidos({ idCliente }));
+    onAlterado();
+  };
 
   const handleWhatsApp = () => {
     // wa.me/<telefone> exatamente como gravado (já tem o DDI 55), sem acrescentar nada.
@@ -57,7 +84,7 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
 
       {cliente && (
         <>
-          <AlertaPedidoEmAberto resumo={RESUMO_PEDIDOS} />
+          <AlertaPedidoEmAberto resumo={calcularResumo(pedidos)} />
 
           {/* Cabeçalho da Ficha */}
           <div style={styles.header}>
@@ -131,6 +158,14 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
 
             {abaAtiva === 'Interações' && <AbaInteracoes idCliente={cliente.id} />}
             {abaAtiva === 'Follow-ups' && <AbaFollowUps idCliente={cliente.id} />}
+            {abaAtiva === 'Pedidos' && (
+              <AbaPedidos
+                pedidos={pedidos}
+                carregando={carregandoPedidos}
+                erroCarga={erroPedidos}
+                onAlterado={recarregarPedidos}
+              />
+            )}
           </div>
         </>
       )}
