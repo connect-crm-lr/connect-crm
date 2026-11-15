@@ -20,4 +20,11 @@ public interface NegociacaoRepository extends JpaRepository<Negociacao, Long> {
             ORDER BY n.dataUltimaMovimentacao DESC, n.id DESC
             """)
     List<Negociacao> listar(@Param("idCliente") Long idCliente);
+
+    /**
+     * Dashboard, "Negociações por etapa": cada linha é [EstagioNegociacao, quantidade].
+     * Etapa sem negociação não aparece aqui; o service completa com zero.
+     */
+    @Query("SELECT n.estagio, COUNT(n) FROM Negociacao n GROUP BY n.estagio")
+    List<Object[]> contarPorEstagio();
 }
