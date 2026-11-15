@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, Plus, X, Edit, Trash2, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { Search, Plus, X, Edit, RotateCcw, EyeOff, Image as ImageIcon } from 'lucide-react';
 import {
   listarTecidos,
   criarTecido,
@@ -100,7 +100,7 @@ export default function Catalogo() {
         {catalogoData.map((item) => (
           <div key={item.id} style={{ ...styles.card, opacity: item.ativo ? 1 : 0.7 }}>
             <div style={styles.imageContainer}>
-              <FotoTecido url={item.fotoUrl} nome={item.nome} />
+              <FotoTecido key={item.fotoUrl} url={item.fotoUrl} nome={item.nome} />
             </div>
 
             <div style={styles.cardContent}>
@@ -119,7 +119,7 @@ export default function Catalogo() {
             <div style={styles.cardFooter}>
               <button style={styles.btnAction} onClick={() => setModal(item)}><Edit size={16} /> Editar</button>
               {item.ativo ? (
-                <button style={styles.btnActionDanger} onClick={() => alterarSituacao(item)}><Trash2 size={16} /> Desativar</button>
+                <button style={styles.btnActionDanger} onClick={() => alterarSituacao(item)}><EyeOff size={16} /> Desativar</button>
               ) : (
                 <button style={styles.btnActionNeutral} onClick={() => alterarSituacao(item)}><RotateCcw size={16} /> Reativar</button>
               )}
@@ -199,6 +199,9 @@ function ModalTecido({ tecido, onClose, onSaved }) {
       const campos = err.detalhes?.campos ?? [];
       if (campos.length > 0) {
         setErros(Object.fromEntries(campos.map((c) => [c.campo, c.mensagem])));
+      } else if (err.message?.startsWith('A URL da foto')) {
+        // Validação da URL da foto (422, sem "campos"): mostra abaixo do campo da foto.
+        setErros({ fotoUrl: err.message });
       } else {
         setErroGeral(err.message);
       }
