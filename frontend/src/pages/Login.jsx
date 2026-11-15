@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -10,7 +10,6 @@ export default function Login() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [errosCampos, setErrosCampos] = useState({});
-  const [aviso, setAviso] = useState('');
   const { autenticado, entrar } = useAuth();
   const local = useLocation();
 
@@ -23,7 +22,6 @@ export default function Login() {
     e.preventDefault();
     setErro('');
     setErrosCampos({});
-    setAviso('');
     setEnviando(true);
     try {
       await entrar(email, password);
@@ -40,12 +38,6 @@ export default function Login() {
       }
       setEnviando(false);
     }
-  };
-
-  const handleRecuperarSenha = () => {
-    // Escopo do RF-002 ainda não decidido: por ora, só a mensagem padrão (não envia e-mail).
-    setErro('');
-    setAviso('Se o e-mail estiver cadastrado, enviaremos o link');
   };
 
   return (
@@ -111,18 +103,13 @@ export default function Login() {
           </div>
 
           <div style={styles.forgotPasswordContainer}>
-            <button
-              type="button"
-              onClick={handleRecuperarSenha}
-              style={styles.forgotPasswordLink}
-            >
+            <Link to="/recuperar-senha" style={{ ...styles.forgotPasswordLink, textDecoration: 'none' }}>
               Esqueci minha senha
-            </button>
+            </Link>
           </div>
 
-          {/* Mensagem geral (credenciais incorretas, API fora do ar) ou aviso da recuperação de senha */}
+          {/* Mensagem geral (credenciais incorretas, API fora do ar) */}
           {erro && <p role="alert" style={styles.erroGeral}>{erro}</p>}
-          {aviso && <p role="status" style={styles.aviso}>{aviso}</p>}
 
           <button
             type="submit"
