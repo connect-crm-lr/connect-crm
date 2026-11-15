@@ -57,7 +57,7 @@ class ClienteIntegrationTest {
         bella = clienteService.criar(new ClienteRequest("IT Ateliê Bella Noiva", "+55 (62) 99999-8888",
                 null, null, "Goiânia", "go", List.of("IT Noivas", "it noivas")));
         moreno = clienteService.criar(new ClienteRequest("IT Casa Têxtil Moreno", "55 11 3456-7890",
-                null, "11.222.333/0001-81", "São Paulo", "SP", List.of("IT Estofaria")));
+                null, "98.765.432/0001-98", "São Paulo", "SP", List.of("IT Estofaria")));
         // Grava a cliente_tag agora, para as consultas via JdbcTemplate enxergarem os vínculos.
         clienteRepository.flush();
     }
@@ -78,7 +78,7 @@ class ClienteIntegrationTest {
                 "SELECT telefone, cpf_cnpj, uf, id_usuario, ativo FROM cliente WHERE id_cliente = ?", moreno.id());
 
         assertThat(linha.get("telefone")).isEqualTo("551134567890");
-        assertThat(linha.get("cpf_cnpj")).isEqualTo("11222333000181");
+        assertThat(linha.get("cpf_cnpj")).isEqualTo("98765432000198");
         assertThat(linha.get("uf")).isEqualTo("SP");
         assertThat(linha.get("id_usuario")).isEqualTo(idUsuarioV2());
         assertThat(linha.get("ativo")).isEqualTo(true);
@@ -136,7 +136,7 @@ class ClienteIntegrationTest {
     @Test
     void criar_cpfCnpjJaCadastrado_recusa() {
         assertThatThrownBy(() -> clienteService.criar(new ClienteRequest("IT Outro", "5562988887777",
-                null, "11222333000181", null, null, List.of())))
+                null, "98765432000198", null, null, List.of())))
                 .isInstanceOf(ConflitoException.class)
                 .hasMessageContaining("IT Casa Têxtil Moreno");
     }
