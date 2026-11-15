@@ -1,102 +1,145 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MessageSquare, X } from 'lucide-react';
+import AlertaPedidoEmAberto from './AlertaPedidoEmAberto';
+import { buscarCliente, desativarCliente, reativarCliente } from '../services/clientes';
+import { formatarDocumento, formatarTelefone } from '../utils/formatadores';
 
-export default function FichaCliente({ cliente, onClose }) {
+// A aba "Pedidos" e o banner de pedido em aberto dependem da listagem de pedidos (#71).
+// Para ligar: incluir 'Pedidos' em ABAS, renderizar a aba e passar o resumo ao AlertaPedidoEmAberto.
+const ABAS = ['Dados', 'Interações', 'Follow-ups'];
+const RESUMO_PEDIDOS = null;
+
+// A ficha lê o cliente da API ao abrir (o pai usa key={id} para recarregar ao trocar de cliente).
+export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado }) {
   const [abaAtiva, setAbaAtiva] = useState('Dados');
+  const [cliente, setCliente] = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
 
-  if (!cliente) return null;
-
-  const abas = ['Dados', 'Interações', 'Follow-ups', 'Pedidos'];
+  useEffect(() => {
+    let cancelado = false;
+    buscarCliente(idCliente)
+      .then((dados) => { if (!cancelado) setCliente(dados); })
+      .catch((e) => { if (!cancelado) setErro(e.message); })
+      .finally(() => { if (!cancelado) setCarregando(false); });
+    return () => { cancelado = true; };
+  }, [idCliente]);
 
   const handleWhatsApp = () => {
+    // wa.me/<telefone> exatamente como gravado (já tem o DDI 55), sem acrescentar nada.
     const mensagem = encodeURIComponent(`Olá ${cliente.nome}, tudo bem?`);
     window.open(`https://wa.me/${cliente.telefone}?text=${mensagem}`, '_blank');
+  };
+
+  // Desativar pode ser recusado pela API (pedido em aberto ou negociação em andamento): mostra a mensagem dela.
+  const alterarSituacao = async () => {
+    setErro('');
+    try {
+      const atualizado = await (cliente.ativo ? desativarCliente(cliente.id) : reativarCliente(cliente.id));
+      setCliente(atualizado);
+      onAlterado();
+    } catch (e) {
+      setErro(e.message);
+    }
   };
 
   return (
     <div style={styles.container}>
       {/* Botão de Fechar */}
-      <button onClick={onClose} style={styles.closeBtn} title="Fechar Ficha">
+      <button onClick={onClose} style={styles.closeBtn} title="Fechar Ficha" aria-label="Fechar ficha">
         <X size={20} color="#6B7280" />
       </button>
 
-      {/* Alerta de Pedido em Aberto */}
-      {cliente.pedidoEmAberto && (
-        <div style={styles.alertaBanner}>
-          Este cliente tem pedido em aberto — R$ 5.879,00 - já comprou 2x, a última em 20/07/2026
-        </div>
-      )}
+      {carregando && <p style={styles.placeholder}>Carregando ficha...</p>}
+      {!carregando && !cliente && <p role="alert" style={styles.erro}>{erro}</p>}
 
-      {/* Cabeçalho da Ficha */}
-      <div style={styles.header}>
-        <div>
-          <h2 style={styles.nome}>{cliente.nome}</h2>
-          <p style={styles.telefone}>{cliente.telefoneDisplay}</p>
-        </div>
-        <button onClick={handleWhatsApp} style={styles.btnWhatsApp}>
-          <MessageSquare size={16} />
-          Enviar WhatsApp
-        </button>
-      </div>
+      {cliente && (
+        <>
+          <AlertaPedidoEmAberto resumo={RESUMO_PEDIDOS} />
 
-      {/* Navegação por Abas */}
-      <div style={styles.tabsContainer}>
-        {abas.map(aba => (
-          <button 
-            key={aba} 
-            onClick={() => setAbaAtiva(aba)}
-            style={{
-              ...styles.tabBtn,
-              ...(abaAtiva === aba ? styles.tabAtiva : {})
-            }}
-          >
-            {aba}
-          </button>
-        ))}
-      </div>
+          {/* Cabeçalho da Ficha */}
+          <div style={styles.header}>
+            <div>
+              <h2 style={styles.nome}>{cliente.nome}</h2>
+              <p style={styles.telefone}>{formatarTelefone(cliente.telefone)}</p>
+              {!cliente.ativo && <span style={styles.inativoBadge}>Inativo</span>}
+            </div>
+            <button onClick={handleWhatsApp} style={styles.btnWhatsApp}>
+              <MessageSquare size={16} />
+              Enviar WhatsApp
+            </button>
+          </div>
 
-      {/* Conteúdo das Abas */}
-      <div style={styles.tabContent}>
-        {abaAtiva === 'Dados' && (
-          <div style={styles.gridDados}>
-            <div style={styles.dadoItem}>
-              <span style={styles.dadoLabel}>E-MAIL</span>
-              <span style={styles.dadoValor}>{cliente.email || 'Não informado'}</span>
-            </div>
-            <div style={styles.dadoItem}>
-              <span style={styles.dadoLabel}>CPF/CNPJ</span>
-              <span style={styles.dadoValor}>{cliente.documento || 'Não informado'}</span>
-            </div>
-            <div style={styles.dadoItem}>
-              <span style={styles.dadoLabel}>CIDADE/UF</span>
-              <span style={styles.dadoValor}>{cliente.cidade || 'Não informado'}</span>
-            </div>
-            <div style={styles.dadoItem}>
-              <span style={styles.dadoLabel}>TAGS</span>
-              <div style={styles.tagsContainer}>
-                {cliente.tags.map(tag => (
-                  <span key={tag} style={styles.tagBadge}>{tag}</span>
-                ))}
+          <div style={styles.acoes}>
+            <button onClick={() => onEditar(cliente)} style={styles.btnAcao}>Editar</button>
+            <button onClick={alterarSituacao} style={cliente.ativo ? styles.btnPerigo : styles.btnAcao}>
+              {cliente.ativo ? 'Desativar' : 'Reativar'}
+            </button>
+          </div>
+          {erro && <p role="alert" style={styles.erro}>{erro}</p>}
+
+          {/* Navegação por Abas */}
+          <div style={styles.tabsContainer}>
+            {ABAS.map((aba) => (
+              <button
+                key={aba}
+                onClick={() => setAbaAtiva(aba)}
+                style={{
+                  ...styles.tabBtn,
+                  ...(abaAtiva === aba ? styles.tabAtiva : {}),
+                }}
+              >
+                {aba}
+              </button>
+            ))}
+          </div>
+
+          {/* Conteúdo das Abas */}
+          <div style={styles.tabContent}>
+            {abaAtiva === 'Dados' && (
+              <div style={styles.gridDados}>
+                <div style={styles.dadoItem}>
+                  <span style={styles.dadoLabel}>E-MAIL</span>
+                  <span style={styles.dadoValor}>{cliente.email || 'Não informado'}</span>
+                </div>
+                <div style={styles.dadoItem}>
+                  <span style={styles.dadoLabel}>CPF/CNPJ</span>
+                  <span style={styles.dadoValor}>{cliente.cpfCnpj ? formatarDocumento(cliente.cpfCnpj) : 'Não informado'}</span>
+                </div>
+                <div style={styles.dadoItem}>
+                  <span style={styles.dadoLabel}>CIDADE/UF</span>
+                  <span style={styles.dadoValor}>
+                    {[cliente.cidade, cliente.uf].filter(Boolean).join(' / ') || 'Não informado'}
+                  </span>
+                </div>
+                <div style={styles.dadoItem}>
+                  <span style={styles.dadoLabel}>TAGS</span>
+                  <div style={styles.tagsContainer}>
+                    {cliente.tags.length === 0 && <span style={styles.dadoValor}>Nenhuma tag</span>}
+                    {cliente.tags.map((tag) => (
+                      <span key={tag.id} style={styles.tagBadge}>{tag.nome}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Placeholders para as outras abas do MVP */}
-        {abaAtiva === 'Interações' && (
-          <div>
-            <button style={styles.btnAcao}>+ Registrar interação</button>
-            <p style={styles.placeholder}>Nenhuma interação registrada.</p>
+            {/* Placeholders das abas que entram na #46 */}
+            {abaAtiva === 'Interações' && (
+              <div>
+                <button style={styles.btnAcao}>+ Registrar interação</button>
+                <p style={styles.placeholder}>Nenhuma interação registrada.</p>
+              </div>
+            )}
+            {abaAtiva === 'Follow-ups' && (
+              <div>
+                <button style={styles.btnAcao}>+ Novo Follow-up</button>
+                <p style={styles.placeholder}>Nenhuma pendência.</p>
+              </div>
+            )}
           </div>
-        )}
-        {abaAtiva === 'Follow-ups' && (
-           <div>
-             <button style={styles.btnAcao}>+ Novo Follow-up</button>
-             <p style={styles.placeholder}>Nenhuma pendência.</p>
-           </div>
-        )}
-        {abaAtiva === 'Pedidos' && <p style={styles.placeholder}>Histórico de pedidos vazio.</p>}
-      </div>
+        </>
+      )}
     </div>
   );
 }
@@ -116,17 +159,18 @@ const styles = {
   closeBtn: {
     position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', cursor: 'pointer'
   },
-  alertaBanner: {
-    backgroundColor: '#FEF3C7', color: '#B45309', padding: '1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1.5rem', fontWeight: '500'
-  },
   header: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem'
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem'
   },
   nome: { fontSize: '1.25rem', fontWeight: '600', color: '#111827', margin: '0 0 0.25rem 0' },
   telefone: { fontSize: '0.875rem', color: '#6B7280', margin: 0 },
+  inativoBadge: { display: 'inline-block', marginTop: '0.5rem', padding: '0.125rem 0.5rem', borderRadius: '9999px', backgroundColor: '#F3F4F6', color: '#6B7280', fontSize: '0.75rem' },
   btnWhatsApp: {
     display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#10B981', color: 'white', border: 'none', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.875rem', cursor: 'pointer', fontWeight: '500'
   },
+  acoes: { display: 'flex', gap: '0.5rem', marginBottom: '1rem' },
+  btnPerigo: { backgroundColor: 'transparent', border: '1px solid #DC2626', color: '#DC2626', padding: '0.5rem 1rem', borderRadius: '6px', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '1rem' },
+  erro: { color: '#DC2626', fontSize: '0.8rem', margin: '0 0 1rem 0' },
   tabsContainer: {
     display: 'flex', borderBottom: '1px solid #E5E7EB', marginBottom: '1.5rem', gap: '1rem'
   },
