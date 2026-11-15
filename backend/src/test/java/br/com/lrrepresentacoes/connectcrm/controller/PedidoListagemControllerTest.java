@@ -3,7 +3,9 @@ package br.com.lrrepresentacoes.connectcrm.controller;
 import br.com.lrrepresentacoes.connectcrm.dto.ItemPedidoResponse;
 import br.com.lrrepresentacoes.connectcrm.dto.PedidoResponse;
 import br.com.lrrepresentacoes.connectcrm.exception.GlobalExceptionHandler;
+import br.com.lrrepresentacoes.connectcrm.dto.TotalPedidosResponse;
 import br.com.lrrepresentacoes.connectcrm.exception.RecursoNaoEncontradoException;
+import br.com.lrrepresentacoes.connectcrm.exception.RegraNegocioException;
 import br.com.lrrepresentacoes.connectcrm.model.FormaPagamento;
 import br.com.lrrepresentacoes.connectcrm.model.StatusPedido;
 import br.com.lrrepresentacoes.connectcrm.service.PedidoService;
@@ -17,9 +19,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -53,7 +58,7 @@ class PedidoListagemControllerTest {
     @Test
     @DisplayName("GET /pedidos sem filtros lista todos, inclusive o cancelado, com o status")
     void listar_semFiltros() throws Exception {
-        when(pedidoService.listar(null, null)).thenReturn(List.of(
+        when(pedidoService.listar(null, null, null, null)).thenReturn(List.of(
                 resposta(8L, StatusPedido.CANCELADO), resposta(7L, StatusPedido.PAGO)));
 
         mockMvc.perform(get("/pedidos"))
@@ -67,14 +72,95 @@ class PedidoListagemControllerTest {
     @Test
     @DisplayName("GET /pedidos?clienteId=1&status=EM_ABERTO repassa os dois filtros")
     void listar_comFiltros() throws Exception {
-        when(pedidoService.listar(1L, StatusPedido.EM_ABERTO))
+        when(pedidoService.listar(1L, StatusPedido.EM_ABERTO, null, null))
                 .thenReturn(List.of(resposta(7L, StatusPedido.EM_ABERTO)));
 
         mockMvc.perform(get("/pedidos").param("clienteId", "1").param("status", "EM_ABERTO"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("EM_ABERTO"));
 
-        verify(pedidoService).listar(1L, StatusPedido.EM_ABERTO);
+        verify(pedidoService).listar(1L, StatusPedido.EM_ABERTO, null, null);
+    }
+
+    @Test
+    @DisplayName("GET /pedidos?inicio=&fim= converte as datas yyyy-MM-dd e repassa ao service")
+    void listar_comPeriodo() throws Exception {
+        LocalDate inicio = LocalDate.of(2026, 11, 1);
+        LocalDate fim = LocalDate.of(2026, 11, 30);
+        when(pedidoService.listar(null, StatusPedido.PAGO, inicio, fim))
+                .thenReturn(List.of(resposta(7L, StatusPedido.PAGO)));
+
+        mockMvc.perform(get("/pedidos").param("inicio", "2026-11-01").param("fim", "2026-11-30")
+                        .param("status", "PAGO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(7));
+
+        verify(pedidoService).listar(null, StatusPedido.PAGO, inicio, fim);
+    }
+
+    @Test
+    @DisplayName("GET /pedidos com data fora do formato yyyy-MM-dd responde 400")
+    void listar_dataInvalida_responde400() throws Exception {
+        mockMvc.perform(get("/pedidos").param("inicio", "01/11/2026"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Valor inválido para o parâmetro 'inicio'"));
+
+        verifyNoInteractions(pedidoService);
+    }
+
+    @Test
+    @DisplayName("GET /pedidos com início depois do fim responde 422 com a mensagem")
+    void listar_inicioDepoisDoFim_responde422() throws Exception {
+        when(pedidoService.listar(null, null, LocalDate.of(2026, 12, 1), LocalDate.of(2026, 11, 1)))
+                .thenThrow(new RegraNegocioException("A data inicial não pode ser depois da data final"));
+
+        mockMvc.perform(get("/pedidos").param("inicio", "2026-12-01").param("fim", "2026-11-01"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.mensagem").value("A data inicial não pode ser depois da data final"));
+    }
+
+    // ---------- GET /pedidos/total (#49) ----------
+
+    @Test
+    @DisplayName("GET /pedidos/total devolve total e quantidadePedidos")
+    void total_devolveTotalEQuantidade() throws Exception {
+        when(pedidoService.totalDoPeriodo(null, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30)))
+                .thenReturn(new TotalPedidosResponse(new BigDecimal("1250.50"), 3));
+
+        mockMvc.perform(get("/pedidos/total").param("inicio", "2026-11-01").param("fim", "2026-11-30"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1250.50))
+                .andExpect(jsonPath("$.quantidadePedidos").value(3));
+    }
+
+    @Test
+    @DisplayName("GET /pedidos/total?status=CANCELADO devolve total 0")
+    void total_statusCancelado_devolveZero() throws Exception {
+        when(pedidoService.totalDoPeriodo(StatusPedido.CANCELADO, null, null))
+                .thenReturn(TotalPedidosResponse.vazio());
+
+        mockMvc.perform(get("/pedidos/total").param("status", "CANCELADO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(0.00))
+                .andExpect(jsonPath("$.quantidadePedidos").value(0));
+    }
+
+    @Test
+    @DisplayName("GET /pedidos/total não é confundido com GET /pedidos/{id}")
+    void total_naoViraBuscaPorId() throws Exception {
+        when(pedidoService.totalDoPeriodo(null, null, null)).thenReturn(TotalPedidosResponse.vazio());
+
+        mockMvc.perform(get("/pedidos/total")).andExpect(status().isOk());
+
+        verify(pedidoService, never()).buscarPorId(any());
+    }
+
+    @Test
+    @DisplayName("GET /pedidos/total com status inexistente responde 400")
+    void total_statusInvalido_responde400() throws Exception {
+        mockMvc.perform(get("/pedidos/total").param("status", "ATRASADO"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("Valor inválido para o parâmetro 'status'"));
     }
 
     @Test
