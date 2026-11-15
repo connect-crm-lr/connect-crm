@@ -39,3 +39,25 @@ export function formatarDocumento(valor) {
   if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   return d;
 }
+
+// Datas: a API manda 'AAAA-MM-DD'; a tela mostra dd/mm/aaaa. Sem usar Date, para o fuso não mudar o dia.
+export function formatarData(dataIso) {
+  if (!dataIso) return '';
+  const [ano, mes, dia] = String(dataIso).slice(0, 10).split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Data e hora de um LocalDateTime da API (ex.: conclusão do follow-up): dd/mm/aaaa HH:mm.
+export function formatarDataHora(dataHoraIso) {
+  if (!dataHoraIso) return '';
+  const hora = String(dataHoraIso).slice(11, 16);
+  return hora ? `${formatarData(dataHoraIso)} ${hora}` : formatarData(dataHoraIso);
+}
+
+// Data de hoje (AAAA-MM-DD) no fuso local; toISOString() usaria UTC e viraria o dia após as 21h no Brasil.
+export function hojeLocal() {
+  const d = new Date();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}

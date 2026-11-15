@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { MessageSquare, X } from 'lucide-react';
 import AlertaPedidoEmAberto from './AlertaPedidoEmAberto';
+import AbaInteracoes from './AbaInteracoes';
+import AbaFollowUps from './AbaFollowUps';
 import { buscarCliente, desativarCliente, reativarCliente } from '../services/clientes';
 import { formatarDocumento, formatarTelefone } from '../utils/formatadores';
 
@@ -127,19 +129,8 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
               </div>
             )}
 
-            {/* Placeholders das abas que entram na #46 */}
-            {abaAtiva === 'Interações' && (
-              <div>
-                <button style={styles.btnAcao}>+ Registrar interação</button>
-                <p style={styles.placeholder}>Nenhuma interação registrada.</p>
-              </div>
-            )}
-            {abaAtiva === 'Follow-ups' && (
-              <div>
-                <button style={styles.btnAcao}>+ Novo Follow-up</button>
-                <p style={styles.placeholder}>Nenhuma pendência.</p>
-              </div>
-            )}
+            {abaAtiva === 'Interações' && <AbaInteracoes idCliente={cliente.id} />}
+            {abaAtiva === 'Follow-ups' && <AbaFollowUps idCliente={cliente.id} />}
           </div>
         </>
       )}
