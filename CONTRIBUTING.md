@@ -11,7 +11,7 @@ Este guia explica como a equipe trabalha no repositório: branches, commits, lab
 | `main` | Só versões fechadas. Cada versão recebe uma tag (`v0.1.0`, `v0.2.0`...). Ninguém commita direto. |
 | `develop` | Branch de integração. Todo PR vai para ela. Ninguém commita direto. |
 | `tipo/descricao-curta` | Uma branch por issue, criada a partir da `develop` atualizada. |
-| `release/vX.Y.Z` | Criada no fechamento de uma versão. Só recebe correções. |
+| `release/vX.Y.Z` | Criada no fechamento de uma versão. Só recebe correções, por PR. Passo a passo em [docs/processo-release.md](docs/processo-release.md). |
 | `hotfix/descricao-curta` | Correção urgente de algo que já está na `main`. |
 
 As branches `main` e `develop` são protegidas: não aceitam push direto, force push nem exclusão, e só recebem código por PR aprovado.
@@ -105,7 +105,7 @@ Em **implementação nova** ou configuração inicial, nenhuma label de manuten�
    git merge develop
 ```
 
-2. **Abra o PR sempre para a `develop`** (exceto `release/` e `hotfix/`).
+2. **Abra o PR sempre para a `develop`** (exceto `release/` e `hotfix/`). Correção de homologação durante uma release vai para a `release/vX.Y.Z`.
 3. **Preencha o template inteiro**: descrição, `Closes #número`, tipo de mudança, tipo de manutenção, como testar e checklist.
 4. **Na lateral:** milestone da versão, label de prioridade e um revisor.
 5. **O CI precisa estar verde** (build, testes e lint). PR com CI vermelho não é mergeado.
