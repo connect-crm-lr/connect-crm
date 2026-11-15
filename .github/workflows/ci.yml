@@ -103,8 +103,12 @@ jobs:
           JWT_SECRET=chave_de_teste_do_ci_com_mais_de_32_caracteres
           EOF
 
+      # A JVM do runner roda em UTC; o sistema e o banco usam America/Sao_Paulo (AGENTS 4).
+      # Sem isso, as datas das consultas por periodo saem deslocadas em 3 horas.
       - name: Rodar testes (./mvnw test)
         working-directory: backend
+        env:
+          TZ: America/Sao_Paulo
         run: |
           chmod +x mvnw
           ./mvnw -B test
