@@ -63,6 +63,11 @@ public class GlobalExceptionHandler {
         return resposta(HttpStatusCode.valueOf(422), ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ConflitoException.class)
+    public ResponseEntity<ErroResponse> conflito(ConflitoException ex, HttpServletRequest request) {
+        return resposta(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErroResponse> corpoInvalido(HttpMessageNotReadableException ex,
                                                       HttpServletRequest request) {
