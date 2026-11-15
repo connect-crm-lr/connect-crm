@@ -129,26 +129,38 @@ export default function NovoPedido() {
       setItens([]);
       setPagoNoAto(false);
       setErros({});
-      // O saldo mudou: recarrega as linhas de estoque.
-      setEstoque(await listarEstoqueParaPedido());
+      await atualizarEstoque();
     } catch (err) {
       // "campos" da API: cada erro de validação vai abaixo do campo correspondente.
       const campos = err.detalhes?.campos ?? [];
       if (campos.length > 0) {
         const mapa = {};
+        const semLugar = []; // campo que não existe na tela (ex.: idNegociacao): não pode falhar em silêncio
         campos.forEach((c) => {
           const item = /^itens\[(\d+)\]/.exec(c.campo);
           if (item) mapa[`item${item[1]}`] = c.mensagem;
           else if (c.campo === 'idCliente') mapa.cliente = c.mensagem;
-          else mapa[c.campo] = c.mensagem;
+          else if (c.campo === 'itens' || c.campo === 'formaPagamento') mapa[c.campo] = c.mensagem;
+          else semLugar.push(c.mensagem);
         });
         setErros(mapa);
+        if (semLugar.length > 0) setErroGeral(semLugar.join(' '));
       } else {
         // Ex.: "Estoque insuficiente: Linho Bege 102 tem 18 m" — mensagem do back.
         setErroGeral(err.message);
       }
     } finally {
       setEnviando(false);
+    }
+  };
+
+  // O saldo mudou: recarrega as linhas de estoque. Nunca lança: se este GET falhar, o pedido já foi criado
+  // e não deve aparecer erro; a lista só fica desatualizada até a próxima abertura da tela.
+  const atualizarEstoque = async () => {
+    try {
+      setEstoque(await listarEstoqueParaPedido());
+    } catch {
+      // ignorado de propósito
     }
   };
 

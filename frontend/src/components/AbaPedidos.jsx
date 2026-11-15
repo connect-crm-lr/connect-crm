@@ -29,6 +29,11 @@ export default function AbaPedidos({ pedidos, carregando, erroCarga, onAlterado 
     }
   };
 
+  const pagar = (pedido) => {
+    if (!window.confirm(`Marcar o pedido ${formatarNumeroPedido(pedido.id)} como pago?`)) return;
+    executar(pedido, pagarPedido);
+  };
+
   const cancelar = (pedido) => {
     if (!window.confirm(`Cancelar o pedido ${formatarNumeroPedido(pedido.id)}? A metragem volta ao estoque e o cancelamento é definitivo.`)) {
       return;
@@ -67,7 +72,7 @@ export default function AbaPedidos({ pedidos, carregando, erroCarga, onAlterado 
               </ul>
               {p.status === 'EM_ABERTO' && (
                 <div style={styles.acoes}>
-                  <button style={styles.btnPagar} disabled={ocupado} onClick={() => executar(p, pagarPedido)}>
+                  <button style={styles.btnPagar} disabled={ocupado} onClick={() => pagar(p)}>
                     {ocupado ? 'Aguarde...' : 'Marcar como pago'}
                   </button>
                   <button style={styles.btnCancelar} disabled={ocupado} onClick={() => cancelar(p)}>Cancelar pedido</button>
