@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../components/MainLayout';
 import RotaProtegida from '../components/RotaProtegida';
 import Login from '../pages/Login';
+import RecuperarSenha from '../pages/RecuperarSenha';
 import Dashboard from '../pages/Dashboard';
 import Clientes from '../pages/Clientes';
 import Funil from '../pages/Funil';
@@ -22,6 +23,7 @@ export default function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/recuperar-senha" element={<RecuperarSenha />} />
 
         {/* Tudo dentro de RotaProtegida exige login; sem ele, volta para /login. */}
         <Route element={<RotaProtegida />}>
