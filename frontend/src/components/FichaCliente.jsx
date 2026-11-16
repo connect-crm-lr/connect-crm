@@ -62,6 +62,11 @@ export default function FichaCliente({ idCliente, onClose, onEditar, onAlterado 
 
   // Desativar pode ser recusado pela API (pedido em aberto ou negociação em andamento): mostra a mensagem dela.
   const alterarSituacao = async () => {
+    if (cliente.ativo && !window.confirm(
+      `Desativar o cliente ${cliente.nome}? Ele some das listagens e não poderá receber pedidos nem negociações até ser reativado.`,
+    )) {
+      return;
+    }
     setErro('');
     try {
       const atualizado = await (cliente.ativo ? desativarCliente(cliente.id) : reativarCliente(cliente.id));

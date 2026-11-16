@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { listarFollowUps, criarFollowUp, concluirFollowUp } from '../services/followUps';
-import { formatarData, formatarDataHora, hojeLocal } from '../utils/formatadores';
+import { amanhaLocal, formatarData, formatarDataHora, hojeLocal } from '../utils/formatadores';
 import { estilosFicha as s } from '../utils/estilosFicha';
 
 // Aba Follow-ups da ficha: próximas ações a fazer (lista + criar + concluir).
@@ -105,7 +105,8 @@ export default function AbaFollowUps({ idCliente }) {
 
 // Modal Novo Follow-up: data prevista e descrição da próxima ação. Erros aparecem abaixo do campo.
 function ModalFollowUp({ idCliente, onClose, onSaved }) {
-  const [data, setData] = useState(hojeLocal);
+  // Follow-up é o próximo contato: já vem para amanhã (o usuário pode trocar para hoje).
+  const [data, setData] = useState(amanhaLocal);
   const [descricao, setDescricao] = useState('');
   const [erros, setErros] = useState({});
   const [erroGeral, setErroGeral] = useState('');
