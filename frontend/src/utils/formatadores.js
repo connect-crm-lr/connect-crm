@@ -70,3 +70,12 @@ export function hojeLocal() {
   const dia = String(d.getDate()).padStart(2, '0');
   return `${d.getFullYear()}-${mes}-${dia}`;
 }
+
+// Data de amanhã (AAAA-MM-DD) no fuso local; setDate cuida da virada de mês e de ano.
+export function amanhaLocal() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+}

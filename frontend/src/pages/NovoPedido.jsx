@@ -85,14 +85,22 @@ export default function NovoPedido() {
     setLinhaSel('');
     setMetragemSel('');
     setErros((atual) => ({ ...atual, linha: undefined, metragemSel: undefined, itens: undefined }));
+    setErroGeral(''); // a lista mudou: o erro da última tentativa (ex.: estoque insuficiente) já não vale
   };
 
+  // Corrigir a metragem tira o erro daquela linha e o erro geral da última tentativa
+  // (ex.: "Estoque insuficiente"), para a tela não parecer bloqueada depois da correção.
   const alterarMetragem = (idEstoque, valor) => {
+    const indice = itens.findIndex((i) => i.idEstoque === idEstoque);
     setItens(itens.map((i) => (i.idEstoque === idEstoque ? { ...i, metragem: valor } : i)));
-    limparErro('itens');
+    setErros((atual) => ({ ...atual, itens: undefined, [`item${indice}`]: undefined }));
+    setErroGeral('');
   };
 
-  const removerItem = (idEstoque) => setItens(itens.filter((i) => i.idEstoque !== idEstoque));
+  const removerItem = (idEstoque) => {
+    setItens(itens.filter((i) => i.idEstoque !== idEstoque));
+    setErroGeral('');
+  };
 
   // Prévia do total: metragem × preço do tecido. O valor oficial é calculado e gravado pelo back ao confirmar.
   const valorTotal = itens.reduce(

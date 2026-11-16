@@ -290,7 +290,7 @@ function ModalNovaNegociacao({ clientes, onFechar, onCriada }) {
           id="nova-cliente"
           style={styles.input}
           value={idCliente}
-          onChange={(e) => setIdCliente(e.target.value)}
+          onChange={(e) => { setIdCliente(e.target.value); setErrosCampos((atual) => ({ ...atual, idCliente: undefined })); }}
         >
           <option value="">Selecione o cliente</option>
           {opcoes.map((c) => (
@@ -306,7 +306,7 @@ function ModalNovaNegociacao({ clientes, onFechar, onCriada }) {
           value={descricao}
           maxLength={LIMITE_DESCRICAO}
           placeholder="Ex.: Proposta de Linho Natural - 200 m"
-          onChange={(e) => setDescricao(e.target.value)}
+          onChange={(e) => { setDescricao(e.target.value); setErrosCampos((atual) => ({ ...atual, descricao: undefined })); }}
         />
         {errosCampos.descricao && <span style={styles.erroCampo}>{errosCampos.descricao}</span>}
 
