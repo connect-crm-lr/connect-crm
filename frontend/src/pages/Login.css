@@ -70,11 +70,11 @@
 .login-logo {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  margin-bottom: 12px;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 14px;
   border: 1px solid rgba(140, 170, 255, 0.28);
-  border-radius: 14px;
+  border-radius: 20px;
   background: rgba(11, 16, 32, 0.75);
   box-shadow: 0 6px 24px rgba(91, 124, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }

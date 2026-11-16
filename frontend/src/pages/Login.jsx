@@ -51,7 +51,7 @@ export default function Login() {
         {/* Cabeçalho */}
         <header className="login-cabecalho">
           <div className="login-logo">
-            <LogoConnect tamanho={42} />
+            <LogoConnect tamanho={64} />
           </div>
           <h1 className="login-titulo">Connect CRM</h1>
           <p className="login-subtitulo">LR Representações</p>
