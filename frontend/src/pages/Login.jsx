@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import FundoParticulas from '../components/FundoParticulas';
+import LogoConnect from '../components/LogoConnect';
 import './Login.css';
 
 export default function Login() {
@@ -49,7 +50,9 @@ export default function Login() {
       <main className="login-conteudo">
         {/* Cabeçalho */}
         <header className="login-cabecalho">
-          <span className="login-logo">C</span>
+          <div className="login-logo">
+            <LogoConnect tamanho={42} />
+          </div>
           <h1 className="login-titulo">Connect CRM</h1>
           <p className="login-subtitulo">LR Representações</p>
         </header>
