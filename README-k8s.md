@@ -45,6 +45,11 @@ kubectl port-forward -n monitoring svc/grafana 3000:80
 ```
 Grafana em http://localhost:3000.
 
+Data sources configurados no Grafana:
+- Prometheus: `http://prometheus-server`
+- Loki: `http://loki:3100`
+- Tempo: `http://tempo:3200`
+
 ## Evidências
 
 ### Cluster Minikube iniciado
@@ -82,3 +87,18 @@ Grafana em http://localhost:3000.
 
 ### Stack de observabilidade rodando (Grafana, Loki, Promtail, Tempo, Prometheus)
 ![monitoring](prints/12-pods-observabilidade-running.png)
+
+### Grafana: métricas do Prometheus (pods ativos)
+![prometheus](prints/13-grafana-prometheus-metricas.png)
+
+### Grafana: logs do Loki (aplicação CRM)
+![loki](prints/14-grafana-loki-logs.png)
+
+### Grafana: data sources (Prometheus, Loki e Tempo)
+![datasources](prints/15-grafana-3-datasources.png)
+
+## Observações
+
+- O teste de conexão ("Save & test") do Loki no Grafana exibe aviso por diferença de versão entre o Grafana e o Loki, mas as consultas funcionam normalmente no Explore, como mostram os logs acima.
+- Traces: o Tempo está instalado e conectado ao Grafana como data source. O envio de traces pela aplicação (agente OpenTelemetry no CRM) ficou como próximo passo.
+- Este arquivo se chama `README-k8s.md` para não sobrescrever o README original do projeto.
