@@ -224,7 +224,7 @@ export default function NovoPedido() {
                 <option value="">Selecione o tecido e a cor</option>
                 {estoque.map((l) => (
                   <option key={l.id} value={l.id}>
-                    {l.tecido} — {l.corCodigo} ({formatarMetragem(l.metragem)} em estoque)
+                    {l.tecido} — {l.descricaoCor} ({formatarMetragem(l.metragem)} em estoque)
                   </option>
                 ))}
               </select>
@@ -255,7 +255,7 @@ export default function NovoPedido() {
                   <div style={styles.itemRow}>
                     <div style={{ flex: 3 }}>
                       <span style={styles.itemNome}>{linha?.tecido}</span>
-                      <span style={styles.itemCor}> — {linha?.corCodigo}</span>
+                      <span style={styles.itemCor}> — {linha?.descricaoCor}</span>
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={styles.subLabel}>Metragem (m)</label>
