@@ -90,6 +90,18 @@ export default function Funil() {
     }
   }
 
+  // Trocar a etapa pelo select pede confirmação, no mesmo padrão do "Desativar cliente" da ficha.
+  // Cancelando, o select volta para a etapa anterior (o arrastar continua sem pergunta).
+  function aoTrocarEtapa(evento, card) {
+    const novoEstagio = evento.target.value;
+    const etapa = ETAPAS.find((e) => e.id === novoEstagio);
+    if (!window.confirm(`Mover para ${etapa.nome}?`)) {
+      evento.target.value = card.estagio;
+      return;
+    }
+    moverPara(card, novoEstagio);
+  }
+
   function aoSoltar(evento, estagio) {
     evento.preventDefault();
     setColunaAlvo(null);
@@ -178,7 +190,7 @@ export default function Funil() {
                         style={styles.moverSelect}
                         value={card.estagio}
                         disabled={movendo !== null}
-                        onChange={(e) => moverPara(card, e.target.value)}
+                        onChange={(e) => aoTrocarEtapa(e, card)}
                       >
                         {ETAPAS.map((opcao) => (
                           <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
