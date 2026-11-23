@@ -59,6 +59,13 @@ public class Estoque {
         this.atualizadoEm = LocalDateTime.now(FUSO);
     }
 
+    // Linha que existia sem código recebe o código informado numa entrada (nunca troca um código já gravado).
+    public void preencherCodigo(String novoCodigo) {
+        if (this.codigo == null) {
+            this.codigo = novoCodigo;
+        }
+    }
+
     public void somar(BigDecimal metros) {
         this.metragem = this.metragem.add(metros);
         this.atualizadoEm = LocalDateTime.now(FUSO);

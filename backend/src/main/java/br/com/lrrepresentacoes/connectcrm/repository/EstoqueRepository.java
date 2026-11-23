@@ -47,7 +47,7 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
      * a segunda espera a primeira terminar e não insere nada, em vez de falhar na
      * uk_estoque_tecido_cor. Capturar a exceção não serviria: no PostgreSQL, depois de um erro
      * a transação inteira fica abortada. metragem e atualizado_em usam os DEFAULT da V1.
-     * Se a linha já existe, o código recebido é ignorado (a unicidade é só por tecido + cor).
+     * Se a linha já existe, o código não é gravado aqui: o service confere e preenche/recusa.
      */
     @Modifying
     @Query(value = """

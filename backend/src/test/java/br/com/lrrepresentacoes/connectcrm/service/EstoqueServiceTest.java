@@ -199,6 +199,53 @@ class EstoqueServiceTest {
         assertThat(comCodigo.getDescricaoCor()).isEqualTo("05 Marinho");
     }
 
+    // Cor existente com outro código: recusa com a mensagem que diz qual código já está gravado.
+    @Test
+    void registrarEntrada_corExistenteComOutroCodigo_recusaComMensagem() {
+        Tecido tecido = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho")))
+                .thenReturn(Optional.of(new Estoque(tecido, "05", "Marinho")));
+
+        assertThatThrownBy(() -> estoqueService.registrarEntrada(
+                new EntradaEstoqueRequest(1L, "marinho", "06", BigDecimal.TEN, null)))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Linho Natural / Marinho já está cadastrada com o código 05. Confira o código.");
+        verify(entradaEstoqueRepository, never()).save(any());
+    }
+
+    // Mesmo código, ou entrada sem código, numa linha que já tem código: aceita e soma.
+    @Test
+    void registrarEntrada_corExistenteComMesmoCodigoOuSemCodigo_soma() {
+        Tecido tecido = linho();
+        Estoque linha = new Estoque(tecido, "05", "Marinho");
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho"))).thenReturn(Optional.of(linha));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "Marinho", "05", BigDecimal.TEN, null));
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "Marinho", null, BigDecimal.TEN, null));
+
+        assertThat(linha.getMetragem()).isEqualByComparingTo("20");
+        assertThat(linha.getCodigo()).isEqualTo("05");
+    }
+
+    // Linha existente sem código + entrada com código: preenche o código na linha.
+    @Test
+    void registrarEntrada_linhaSemCodigoEEntradaComCodigo_preencheOCodigo() {
+        Tecido tecido = linho();
+        Estoque linha = new Estoque(tecido, null, "Marinho");
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho"))).thenReturn(Optional.of(linha));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
+                new EntradaEstoqueRequest(1L, "Marinho", "05", BigDecimal.TEN, null));
+
+        assertThat(linha.getCodigo()).isEqualTo("05");
+        assertThat(resposta.descricaoCor()).isEqualTo("05 Marinho");
+    }
+
     // CT-RF009-02: valor-limite do estoque baixo (< 20 m).
     @Test
     void listar_marcaEstoqueBaixoSoAbaixoDe20Metros() {

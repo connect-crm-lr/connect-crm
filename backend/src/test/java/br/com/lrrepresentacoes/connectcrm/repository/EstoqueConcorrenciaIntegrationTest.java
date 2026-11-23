@@ -60,11 +60,11 @@ class EstoqueConcorrenciaIntegrationTest {
     // uk_estoque_tecido_cor, existe uma única linha e nenhuma metragem se perde.
     @Test
     void entradasSimultaneas_corNova_criamUmaLinhaESomamTudo() throws Exception {
-        registrarAoMesmoTempo("Azul Royal", new BigDecimal("10.00"));
+        registrarAoMesmoTempo("Azul royal", new BigDecimal("10.00"));
 
-        assertThat(contarLinhas("Azul Royal")).isEqualTo(1);
-        assertThat(saldo("Azul Royal")).isEqualByComparingTo("40.00");
-        assertThat(contarEntradas("Azul Royal")).isEqualTo(ENTRADAS_SIMULTANEAS);
+        assertThat(contarLinhas("Azul royal")).isEqualTo(1);
+        assertThat(saldo("Azul royal")).isEqualByComparingTo("40.00");
+        assertThat(contarEntradas("Azul royal")).isEqualTo(ENTRADAS_SIMULTANEAS);
     }
 
     // Entradas simultâneas numa linha que já existe: o SELECT ... FOR UPDATE faz uma

@@ -86,6 +86,17 @@ public class EstoqueService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Linha de estoque não encontrada logo após ser criada: tecido " + tecido.getId() + ", cor " + cor));
 
+        // Cor que já existe com outro código: recusa, em vez de ignorar o código em silêncio.
+        // Linha sem código recebe o código informado. A exceção desfaz a transação inteira.
+        if (codigo != null) {
+            if (estoque.getCodigo() == null) {
+                estoque.preencherCodigo(codigo);
+            } else if (!estoque.getCodigo().equals(codigo)) {
+                throw new RegraNegocioException(tecido.getNome() + " / " + estoque.getCor()
+                        + " já está cadastrada com o código " + estoque.getCodigo() + ". Confira o código.");
+            }
+        }
+
         LocalDate data = request.dataEntrada() != null ? request.dataEntrada() : LocalDate.now(FUSO);
         EntradaEstoque entrada = entradaEstoqueRepository.save(
                 new EntradaEstoque(estoque, request.metragem(), data));

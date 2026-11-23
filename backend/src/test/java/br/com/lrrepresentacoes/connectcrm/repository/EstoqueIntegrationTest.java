@@ -121,6 +121,40 @@ class EstoqueIntegrationTest {
                 .isEqualTo("05A");
     }
 
+    // Cor existente com outro código: recusa e nada é gravado (saldo e histórico intactos).
+    @Test
+    void registrarEntrada_corExistenteComOutroCodigo_recusaENaoGravaNada() {
+        EntradaEstoqueResponse primeira = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Marinho", "05", new BigDecimal("10.00"), null));
+        estoqueRepository.flush();
+
+        assertThatThrownBy(() -> estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "marinho", "06", new BigDecimal("7.00"), null)))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("IT Linho Estoque / Marinho já está cadastrada com o código 05. Confira o código.");
+
+        assertThat(estoqueRepository.findById(primeira.idEstoque()).orElseThrow().getMetragem())
+                .isEqualByComparingTo("10.00");
+        assertThat(entradaEstoqueRepository.findByEstoqueIdOrderByDataEntradaDescIdDesc(primeira.idEstoque()))
+                .hasSize(1);
+    }
+
+    // Linha criada sem código recebe o código numa entrada posterior.
+    @Test
+    void registrarEntrada_linhaSemCodigo_recebeOCodigoDaEntradaSeguinte() {
+        EntradaEstoqueResponse primeira = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Marinho", null, new BigDecimal("10.00"), null));
+        EntradaEstoqueResponse segunda = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Marinho", "05", new BigDecimal("5.00"), null));
+        estoqueRepository.flush();
+
+        assertThat(segunda.idEstoque()).isEqualTo(primeira.idEstoque());
+        assertThat(segunda.descricaoCor()).isEqualTo("05 Marinho");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT codigo FROM estoque WHERE id_estoque = ?", String.class, segunda.idEstoque()))
+                .isEqualTo("05");
+    }
+
     // CT-RF009-01/02: a tela Estoque mostra a linha com o indicador de estoque baixo.
     @Test
     void listar_mostraALinhaComEstoqueBaixo() {
