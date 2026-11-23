@@ -137,7 +137,7 @@ public class PedidoService {
             }
             if (linha.getMetragem().compareTo(item.getValue()) < 0) {
                 throw new RegraNegocioException("Estoque insuficiente: " + tecido.getNome() + " "
-                        + linha.getCorCodigo() + " tem " + emMetros(linha.getMetragem()) + " m");
+                        + linha.getDescricaoCor() + " tem " + emMetros(linha.getMetragem()) + " m");
             }
         }
 

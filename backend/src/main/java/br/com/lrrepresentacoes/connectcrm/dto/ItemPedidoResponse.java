@@ -12,7 +12,9 @@ public record ItemPedidoResponse(
         Long id,
         Long idEstoque,
         String tecido,
-        String corCodigo,
+        String codigo,
+        String cor,
+        String descricaoCor,
         BigDecimal metragem,
         BigDecimal precoMetro,
         BigDecimal subtotal
@@ -24,7 +26,9 @@ public record ItemPedidoResponse(
                 item.getId(),
                 item.getEstoque().getId(),
                 item.getEstoque().getTecido().getNome(),
-                item.getEstoque().getCorCodigo(),
+                item.getEstoque().getCodigo(),
+                item.getEstoque().getCor(),
+                item.getEstoque().getDescricaoCor(),
                 item.getMetragem(),
                 item.getPrecoMetro(),
                 item.getSubtotal());

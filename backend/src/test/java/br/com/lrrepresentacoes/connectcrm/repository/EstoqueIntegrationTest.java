@@ -62,9 +62,9 @@ class EstoqueIntegrationTest {
     @Test
     void registrarEntrada_criaALinhaESomaNaMesmaCorComHistorico() {
         EntradaEstoqueResponse primeira = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "Off-white", new BigDecimal("15.00"), LocalDate.of(2026, 11, 2)));
+                linho.getId(), "Off-white", null, new BigDecimal("15.00"), LocalDate.of(2026, 11, 2)));
         EntradaEstoqueResponse segunda = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), " Off-white ", new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
+                linho.getId(), " Off-white ", null, new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
         estoqueRepository.flush();
 
         assertThat(segunda.idEstoque()).isEqualTo(primeira.idEstoque());
@@ -76,27 +76,60 @@ class EstoqueIntegrationTest {
                 .containsExactly("50.00", "15.00");
     }
 
-    // A cor é comparada exatamente, como na uk_estoque_tecido_cor da V1: outra grafia é outra linha.
+    // A cor é normalizada antes de gravar: "preto" e "Preto" (e " PRETO ") caem na mesma linha.
     @Test
-    void registrarEntrada_corComOutraGrafia_criaOutraLinha() {
+    void registrarEntrada_corComOutraGrafia_somaNaMesmaLinha() {
         EntradaEstoqueResponse minuscula = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "Off-white", new BigDecimal("15.00"), null));
+                linho.getId(), "preto", null, new BigDecimal("15.00"), null));
+        EntradaEstoqueResponse capitalizada = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Preto", null, new BigDecimal("50.00"), null));
         EntradaEstoqueResponse maiuscula = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "OFF-WHITE", new BigDecimal("50.00"), null));
+                linho.getId(), " PRETO ", null, new BigDecimal("5.00"), null));
 
-        assertThat(maiuscula.idEstoque()).isNotEqualTo(minuscula.idEstoque());
-        assertThat(maiuscula.saldoAtual()).isEqualByComparingTo("50.00");
+        assertThat(capitalizada.idEstoque()).isEqualTo(minuscula.idEstoque());
+        assertThat(maiuscula.idEstoque()).isEqualTo(minuscula.idEstoque());
+        assertThat(maiuscula.cor()).isEqualTo("Preto");
+        assertThat(maiuscula.saldoAtual()).isEqualByComparingTo("70.00");
+    }
+
+    // O código é opcional: sem ele a linha fica com codigo null e a descrição é só a cor.
+    @Test
+    void registrarEntrada_semCodigo_gravaCodigoNulo() {
+        EntradaEstoqueResponse entrada = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "Marinho", "  ", new BigDecimal("10.00"), null));
+        estoqueRepository.flush();
+
+        assertThat(entrada.codigo()).isNull();
+        assertThat(entrada.cor()).isEqualTo("Marinho");
+        assertThat(entrada.descricaoCor()).isEqualTo("Marinho");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT codigo FROM estoque WHERE id_estoque = ?", String.class, entrada.idEstoque())).isNull();
+    }
+
+    // Com código: grava em maiúsculas e a descrição é "código cor".
+    @Test
+    void registrarEntrada_comCodigo_gravaEmMaiusculasEMontaADescricao() {
+        EntradaEstoqueResponse entrada = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
+                linho.getId(), "marinho", " 05a ", new BigDecimal("10.00"), null));
+        estoqueRepository.flush();
+
+        assertThat(entrada.codigo()).isEqualTo("05A");
+        assertThat(entrada.cor()).isEqualTo("Marinho");
+        assertThat(entrada.descricaoCor()).isEqualTo("05A Marinho");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT codigo FROM estoque WHERE id_estoque = ?", String.class, entrada.idEstoque()))
+                .isEqualTo("05A");
     }
 
     // CT-RF009-01/02: a tela Estoque mostra a linha com o indicador de estoque baixo.
     @Test
     void listar_mostraALinhaComEstoqueBaixo() {
         estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "Areia", new BigDecimal("19.99"), null));
+                linho.getId(), "Areia", null, new BigDecimal("19.99"), null));
         estoqueRepository.flush();
 
         List<EstoqueResponse> baixo = estoqueService.listar("it linho estoque", false);
-        assertThat(baixo).extracting(EstoqueResponse::corCodigo, EstoqueResponse::estoqueBaixo)
+        assertThat(baixo).extracting(EstoqueResponse::cor, EstoqueResponse::estoqueBaixo)
                 .containsExactly(org.assertj.core.groups.Tuple.tuple("Areia", true));
 
         assertThat(estoqueService.listar(null, true))
@@ -107,7 +140,7 @@ class EstoqueIntegrationTest {
     // CT-RF009-03: linhas de tecido desativado não aparecem.
     @Test
     void listar_naoMostraLinhaDeTecidoDesativado() {
-        jdbcTemplate.update("INSERT INTO estoque (id_tecido, cor_codigo, metragem) VALUES (?, 'Preto', 100)",
+        jdbcTemplate.update("INSERT INTO estoque (id_tecido, cor, metragem) VALUES (?, 'Preto', 100)",
                 desativado.getId());
 
         assertThat(estoqueService.listar(null, false))
@@ -119,7 +152,7 @@ class EstoqueIntegrationTest {
     @Test
     void registrarEntrada_tecidoDesativado_recusa() {
         assertThatThrownBy(() -> estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                desativado.getId(), "Preto", BigDecimal.TEN, null)))
+                desativado.getId(), "Preto", null, BigDecimal.TEN, null)))
                 .isInstanceOf(RegraNegocioException.class);
     }
 
@@ -127,7 +160,7 @@ class EstoqueIntegrationTest {
     @Test
     void saldoNegativo_oBancoRecusa() {
         EntradaEstoqueResponse entrada = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "Natural", new BigDecimal("5.00"), null));
+                linho.getId(), "Natural", null, new BigDecimal("5.00"), null));
         estoqueRepository.flush();
 
         assertThatThrownBy(() -> jdbcTemplate.update(

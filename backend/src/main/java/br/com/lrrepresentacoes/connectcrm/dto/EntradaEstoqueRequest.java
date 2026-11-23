@@ -11,16 +11,19 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * Modal "Registrar entrada": tecido, cor, metragem e data (AGENTS 7.3).
+ * Modal "Registrar entrada": tecido, cor (obrigatória), código da cor (opcional), metragem e data (AGENTS 7.3).
  * Sem data, o service usa a data de hoje no fuso America/Sao_Paulo.
  */
 public record EntradaEstoqueRequest(
         @NotNull(message = "O tecido é obrigatório")
         Long idTecido,
 
-        @NotBlank(message = "A cor/código é obrigatória")
-        @Size(max = 50, message = "A cor/código pode ter no máximo 50 caracteres")
-        String corCodigo,
+        @NotBlank(message = "A cor é obrigatória")
+        @Size(max = 50, message = "A cor pode ter no máximo 50 caracteres")
+        String cor,
+
+        @Size(max = 20, message = "O código pode ter no máximo 20 caracteres")
+        String codigo,
 
         @NotNull(message = "A metragem é obrigatória")
         @Positive(message = "A metragem deve ser maior que zero")

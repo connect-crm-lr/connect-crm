@@ -72,7 +72,7 @@ class EstoqueConcorrenciaIntegrationTest {
     @Test
     void entradasSimultaneas_linhaExistente_naoPerdemASoma() throws Exception {
         estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                tecido.getId(), "Verde", new BigDecimal("5.00"), null));
+                tecido.getId(), "Verde", null, new BigDecimal("5.00"), null));
 
         registrarAoMesmoTempo("Verde", new BigDecimal("2.50"));
 
@@ -92,7 +92,7 @@ class EstoqueConcorrenciaIntegrationTest {
                 resultados.add(executor.submit(() -> {
                     largada.await();
                     estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                            tecido.getId(), cor, metragem, null));
+                            tecido.getId(), cor, null, metragem, null));
                     return null;
                 }));
             }
@@ -108,20 +108,20 @@ class EstoqueConcorrenciaIntegrationTest {
 
     private int contarLinhas(String cor) {
         return jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM estoque WHERE id_tecido = ? AND cor_codigo = ?",
+                "SELECT count(*) FROM estoque WHERE id_tecido = ? AND cor = ?",
                 Integer.class, tecido.getId(), cor);
     }
 
     private BigDecimal saldo(String cor) {
         return jdbcTemplate.queryForObject(
-                "SELECT metragem FROM estoque WHERE id_tecido = ? AND cor_codigo = ?",
+                "SELECT metragem FROM estoque WHERE id_tecido = ? AND cor = ?",
                 BigDecimal.class, tecido.getId(), cor);
     }
 
     private int contarEntradas(String cor) {
         return jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM entrada_estoque en JOIN estoque e ON e.id_estoque = en.id_estoque "
-                        + "WHERE e.id_tecido = ? AND e.cor_codigo = ?",
+                        + "WHERE e.id_tecido = ? AND e.cor = ?",
                 Integer.class, tecido.getId(), cor);
     }
 }

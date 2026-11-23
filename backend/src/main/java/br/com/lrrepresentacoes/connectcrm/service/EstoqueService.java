@@ -79,8 +79,9 @@ public class EstoqueService {
 
         // Garante que a linha existe (sem falhar se outra entrada criou ao mesmo tempo)
         // e depois a trava para somar com segurança.
-        String cor = request.corCodigo().trim();
-        estoqueRepository.criarSeNaoExistir(tecido.getId(), cor);
+        String cor = normalizarCor(request.cor());
+        String codigo = normalizarCodigo(request.codigo());
+        estoqueRepository.criarSeNaoExistir(tecido.getId(), codigo, cor);
         Estoque estoque = estoqueRepository.buscarParaAtualizar(tecido.getId(), cor)
                 .orElseThrow(() -> new IllegalStateException(
                         "Linha de estoque não encontrada logo após ser criada: tecido " + tecido.getId() + ", cor " + cor));
@@ -91,6 +92,23 @@ public class EstoqueService {
 
         estoque.somar(request.metragem());
         return EntradaEstoqueResponse.de(entrada);
+    }
+
+    /**
+     * Cor com a primeira letra maiúscula e o resto minúsculo ("preto" e "PRETO" viram "Preto"),
+     * para a mesma cor não gerar duas linhas de estoque por diferença de maiúsculas.
+     */
+    static String normalizarCor(String cor) {
+        String texto = cor.trim();
+        return texto.substring(0, 1).toUpperCase(Locale.ROOT) + texto.substring(1).toLowerCase(Locale.ROOT);
+    }
+
+    /** Código em maiúsculas; vazio ou só espaços vira null (o código é opcional). */
+    static String normalizarCodigo(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            return null;
+        }
+        return codigo.trim().toUpperCase(Locale.ROOT);
     }
 
     @Transactional(readOnly = true)

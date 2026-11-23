@@ -69,7 +69,7 @@ class PedidoServiceTest {
     }
 
     private static Estoque linha(Long id, Tecido tecido, String cor, String metros) {
-        Estoque estoque = new Estoque(tecido, cor);
+        Estoque estoque = new Estoque(tecido, null, cor);
         estoque.somar(new BigDecimal(metros));
         ReflectionTestUtils.setField(estoque, "id", id);
         return estoque;
