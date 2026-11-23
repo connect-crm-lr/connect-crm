@@ -12,6 +12,10 @@ import {
   telefoneParaCampo,
 } from '../utils/formatadores';
 
+// As 27 UFs, em ordem alfabética; GO é o padrão do cadastro (cliente novo).
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+const UF_PADRAO = 'GO';
+
 const pluralClientes = (n) => `${n} ${n === 1 ? 'cliente' : 'clientes'}`;
 
 export default function Clientes() {
@@ -257,7 +261,7 @@ function ModalCliente({ cliente, tagsExistentes, onClose, onSaved }) {
     email: cliente?.email ?? '',
     cpfCnpj: cliente?.cpfCnpj ?? '',
     cidade: cliente?.cidade ?? '',
-    uf: cliente?.uf ?? '',
+    uf: cliente ? (cliente.uf ?? '') : UF_PADRAO,
   });
   const [tags, setTags] = useState(cliente ? cliente.tags.map((t) => t.nome) : []);
   const [novaTag, setNovaTag] = useState('');
@@ -387,7 +391,11 @@ function ModalCliente({ cliente, tagsExistentes, onClose, onSaved }) {
             </div>
             <div style={{ ...styles.inputGroup, flex: 1 }}>
               <label style={styles.label}>UF</label>
-              <input name="uf" type="text" placeholder="GO" value={form.uf} onChange={handleChange} style={styles.input} />
+              <select name="uf" value={form.uf} onChange={handleChange} style={styles.input}>
+                {/* Opção vazia só para o cliente antigo sem UF: a UF é opcional na API. */}
+                {!form.uf && <option value="">—</option>}
+                {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+              </select>
               {campoErro('uf')}
             </div>
           </div>
