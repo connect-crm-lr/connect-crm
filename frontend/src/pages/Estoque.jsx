@@ -69,7 +69,8 @@ export default function Estoque() {
           <thead>
             <tr>
               <th style={styles.th}>TECIDO</th>
-              <th style={styles.th}>COR / CÓDIGO</th>
+              <th style={styles.th}>CÓDIGO</th>
+              <th style={styles.th}>COR</th>
               <th style={styles.th}>METRAGEM DISPONÍVEL</th>
             </tr>
           </thead>
@@ -78,7 +79,8 @@ export default function Estoque() {
               // Estoque baixo (< 20 m) vem calculado pela API (regra 6.6); fundo amarelado como alerta visual.
               <tr key={item.id} style={{ ...styles.tr, backgroundColor: item.estoqueBaixo ? '#FFFBEB' : 'white' }}>
                 <td style={styles.td}>{item.tecido}</td>
-                <td style={styles.td}>{item.descricaoCor}</td>
+                <td style={styles.td}>{item.codigo || '—'}</td>
+                <td style={styles.td}>{item.cor}</td>
                 <td style={styles.td}>
                   {formatarMetragem(item.metragem)}
                   {item.estoqueBaixo && <span style={styles.badgeBaixo}>BAIXO</span>}
