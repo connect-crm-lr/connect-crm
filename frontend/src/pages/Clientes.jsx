@@ -12,6 +12,10 @@ import {
   telefoneParaCampo,
 } from '../utils/formatadores';
 
+// As 27 UFs, em ordem alfabética; GO é o padrão do cadastro (cliente novo).
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
+const UF_PADRAO = 'GO';
+
 const pluralClientes = (n) => `${n} ${n === 1 ? 'cliente' : 'clientes'}`;
 
 export default function Clientes() {
@@ -23,6 +27,7 @@ export default function Clientes() {
   const [tags, setTags] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
   const [idFicha, setIdFicha] = useState(null);
   const [modal, setModal] = useState(null); // null = fechado; {} = novo; cliente = edição
 
@@ -69,6 +74,13 @@ export default function Clientes() {
     const espera = setTimeout(carregarClientes, 300);
     return () => clearTimeout(espera);
   }, [carregarClientes]);
+
+  // A mensagem de sucesso some sozinha depois de alguns segundos.
+  useEffect(() => {
+    if (!sucesso) return undefined;
+    const timer = setTimeout(() => setSucesso(''), 4000);
+    return () => clearTimeout(timer);
+  }, [sucesso]);
 
   const tagSelecionada = tags.find((t) => t.id === idTagSelecionada);
 
@@ -166,6 +178,7 @@ export default function Clientes() {
         </div>
 
         {erro && <div role="alert" style={styles.alertError}>{erro}</div>}
+        {sucesso && <div role="status" style={styles.alertOk}>{sucesso}</div>}
 
         <div style={styles.list}>
           {clientes.map((cliente) => {
@@ -235,6 +248,8 @@ export default function Clientes() {
           tagsExistentes={tags}
           onClose={() => setModal(null)}
           onSaved={(salvo) => {
+            // Só o cadastro mostra a mensagem; a edição já reabre a ficha com os dados novos.
+            if (!modal.id) setSucesso('Cliente cadastrado com sucesso');
             setModal(null);
             carregarTags();
             carregarClientes();
@@ -257,7 +272,7 @@ function ModalCliente({ cliente, tagsExistentes, onClose, onSaved }) {
     email: cliente?.email ?? '',
     cpfCnpj: cliente?.cpfCnpj ?? '',
     cidade: cliente?.cidade ?? '',
-    uf: cliente?.uf ?? '',
+    uf: cliente ? (cliente.uf ?? '') : UF_PADRAO,
   });
   const [tags, setTags] = useState(cliente ? cliente.tags.map((t) => t.nome) : []);
   const [novaTag, setNovaTag] = useState('');
@@ -387,7 +402,11 @@ function ModalCliente({ cliente, tagsExistentes, onClose, onSaved }) {
             </div>
             <div style={{ ...styles.inputGroup, flex: 1 }}>
               <label style={styles.label}>UF</label>
-              <input name="uf" type="text" placeholder="GO" value={form.uf} onChange={handleChange} style={styles.input} />
+              <select name="uf" value={form.uf} onChange={handleChange} style={styles.input}>
+                {/* Opção vazia só para o cliente antigo sem UF: a UF é opcional na API. */}
+                {!form.uf && <option value="">—</option>}
+                {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+              </select>
               {campoErro('uf')}
             </div>
           </div>
@@ -468,6 +487,7 @@ const styles = {
   btnReativar: { backgroundColor: 'white', color: '#374151', border: '1px solid #D1D5DB', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '500', cursor: 'pointer' },
   emptyState: { textAlign: 'center', color: '#6B7280', padding: '2rem 0' },
   alertError: { backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1rem' },
+  alertOk: { backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1rem' },
   fieldError: { color: '#DC2626', fontSize: '0.75rem', margin: 0 },
 
   // Modal

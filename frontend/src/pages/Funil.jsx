@@ -90,6 +90,18 @@ export default function Funil() {
     }
   }
 
+  // Trocar a etapa pelo select pede confirmação, no mesmo padrão do "Desativar cliente" da ficha.
+  // Cancelando, o select volta para a etapa anterior (o arrastar continua sem pergunta).
+  function aoTrocarEtapa(evento, card) {
+    const novoEstagio = evento.target.value;
+    const etapa = ETAPAS.find((e) => e.id === novoEstagio);
+    if (!window.confirm(`Mover para ${etapa.nome}?`)) {
+      evento.target.value = card.estagio;
+      return;
+    }
+    moverPara(card, novoEstagio);
+  }
+
   function aoSoltar(evento, estagio) {
     evento.preventDefault();
     setColunaAlvo(null);
@@ -178,7 +190,7 @@ export default function Funil() {
                         style={styles.moverSelect}
                         value={card.estagio}
                         disabled={movendo !== null}
-                        onChange={(e) => moverPara(card, e.target.value)}
+                        onChange={(e) => aoTrocarEtapa(e, card)}
                       >
                         {ETAPAS.map((opcao) => (
                           <option key={opcao.id} value={opcao.id}>{opcao.nome}</option>
@@ -324,7 +336,9 @@ function ModalNovaNegociacao({ clientes, onFechar, onCriada }) {
 }
 
 const styles = {
-  container: { display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif' },
+  // width 0 + minWidth 100%: o quadro não alarga a página (o menu lateral ficaria empurrando a coluna Perdida para fora);
+  // quem rola na horizontal, com cabeçalho e contador de cada coluna visíveis, é o próprio quadro.
+  container: { display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif', width: 0, minWidth: '100%' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' },
   title: { fontSize: '1.5rem', fontWeight: '600', color: '#111827', margin: '0 0 0.25rem 0' },
   subtitle: { fontSize: '0.875rem', color: '#6B7280', margin: 0 },
@@ -334,11 +348,11 @@ const styles = {
   btnIcone: { background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', display: 'flex', alignItems: 'center' },
   alerta: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.875rem', marginBottom: '1rem' },
   board: { display: 'flex', gap: '1rem', overflowX: 'auto', flex: 1, paddingBottom: '1rem' },
-  column: { minWidth: '260px', width: '260px', backgroundColor: '#F9FAFB', borderRadius: '8px', display: 'flex', flexDirection: 'column', border: '2px solid transparent' },
+  column: { flex: '1 1 0', minWidth: '210px', backgroundColor: '#F9FAFB', borderRadius: '8px', display: 'flex', flexDirection: 'column', border: '2px solid transparent' },
   columnAlvo: { borderColor: '#A5B4FC' },
-  columnHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', marginBottom: '0.5rem' },
-  columnTitle: { fontSize: '0.75rem', fontWeight: '600', color: '#374151', letterSpacing: '0.05em' },
-  columnCount: { backgroundColor: 'rgba(255,255,255,0.6)', padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem', color: '#374151', fontWeight: '600' },
+  columnHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderTopLeftRadius: '6px', borderTopRightRadius: '6px', marginBottom: '0.5rem' },
+  columnTitle: { minWidth: 0, fontSize: '0.75rem', fontWeight: '600', color: '#374151', letterSpacing: '0.05em' },
+  columnCount: { flexShrink: 0, backgroundColor: 'rgba(255,255,255,0.6)', padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem', color: '#374151', fontWeight: '600' },
   cardsContainer: { padding: '0 0.5rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1, overflowY: 'auto' },
   card: { backgroundColor: 'white', padding: '1rem', borderRadius: '6px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', border: '1px solid #E5E7EB', cursor: 'grab' },
   cardMovendo: { opacity: 0.5 },
