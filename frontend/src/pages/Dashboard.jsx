@@ -161,7 +161,7 @@ export default function Dashboard() {
                 <div key={item.id} style={styles.estoqueItem}>
                   <div>
                     <p style={styles.tecidoName}>{item.tecido}</p>
-                    <p style={styles.corName}>{item.corCodigo}</p>
+                    <p style={styles.corName}>{item.descricaoCor}</p>
                   </div>
                   <div style={styles.metragemBadge}>
                     {formatarMetragem(item.metragem)}

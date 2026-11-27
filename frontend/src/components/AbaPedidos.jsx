@@ -66,7 +66,7 @@ export default function AbaPedidos({ pedidos, carregando, erroCarga, onAlterado 
               <ul style={styles.itens}>
                 {p.itens.map((i) => (
                   <li key={i.id}>
-                    {i.tecido} ({i.corCodigo}) — {formatarMetragem(i.metragem)} × {formatarDinheiro(i.precoMetro)}
+                    {i.tecido} ({i.descricaoCor}) — {formatarMetragem(i.metragem)} × {formatarDinheiro(i.precoMetro)}
                   </li>
                 ))}
               </ul>

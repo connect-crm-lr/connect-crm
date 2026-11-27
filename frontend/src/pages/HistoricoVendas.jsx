@@ -242,7 +242,7 @@ export default function HistoricoVendas() {
                   <td style={styles.td}>
                     {pedido.itens.map((item) => (
                       <div key={item.id}>
-                        {item.tecido} {item.corCodigo} — {metros(item.metragem)}
+                        {item.tecido} {item.descricaoCor} — {metros(item.metragem)}
                       </div>
                     ))}
                   </td>

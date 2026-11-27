@@ -52,7 +52,7 @@ export default function Estoque() {
           <Search size={18} color="#9CA3AF" style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Buscar por nome do tecido ou cor..."
+            placeholder="Buscar por nome do tecido, cor ou código..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={styles.searchInput}
@@ -69,7 +69,8 @@ export default function Estoque() {
           <thead>
             <tr>
               <th style={styles.th}>TECIDO</th>
-              <th style={styles.th}>COR / CÓDIGO</th>
+              <th style={styles.th}>CÓDIGO</th>
+              <th style={styles.th}>COR</th>
               <th style={styles.th}>METRAGEM DISPONÍVEL</th>
             </tr>
           </thead>
@@ -78,7 +79,8 @@ export default function Estoque() {
               // Estoque baixo (< 20 m) vem calculado pela API (regra 6.6); fundo amarelado como alerta visual.
               <tr key={item.id} style={{ ...styles.tr, backgroundColor: item.estoqueBaixo ? '#FFFBEB' : 'white' }}>
                 <td style={styles.td}>{item.tecido}</td>
-                <td style={styles.td}>{item.corCodigo}</td>
+                <td style={styles.td}>{item.codigo || '—'}</td>
+                <td style={styles.td}>{item.cor}</td>
                 <td style={styles.td}>
                   {formatarMetragem(item.metragem)}
                   {item.estoqueBaixo && <span style={styles.badgeBaixo}>BAIXO</span>}
@@ -99,7 +101,7 @@ export default function Estoque() {
           onClose={() => setIsModalOpen(false)}
           onSaved={(entrada) => {
             setIsModalOpen(false);
-            setAviso(`Entrada registrada: ${formatarMetragem(entrada.metragem)} de ${entrada.tecido} (${entrada.corCodigo}). Saldo atual: ${formatarMetragem(entrada.saldoAtual)}.`);
+            setAviso(`Entrada registrada: ${formatarMetragem(entrada.metragem)} de ${entrada.tecido} (${entrada.descricaoCor}). Saldo atual: ${formatarMetragem(entrada.saldoAtual)}.`);
             carregar();
           }}
         />
@@ -118,10 +120,11 @@ function hojeLocal() {
 
 // Componente do Modal. Erros de validação aparecem abaixo do campo.
 function ModalNovaEntrada({ onClose, onSaved }) {
-  // O modal pede tecido, cor, metragem e data de entrada
+  // O modal pede tecido, cor (obrigatória), código (opcional), metragem e data de entrada
   const [tecidos, setTecidos] = useState([]);
   const [idTecido, setIdTecido] = useState('');
   const [cor, setCor] = useState('');
+  const [codigo, setCodigo] = useState('');
   const [metragem, setMetragem] = useState('');
   const [dataEntrada, setDataEntrada] = useState(hojeLocal);
   const [erros, setErros] = useState({});
@@ -142,7 +145,9 @@ function ModalNovaEntrada({ onClose, onSaved }) {
 
     const novosErros = {};
     if (!idTecido) novosErros.idTecido = 'O tecido é obrigatório';
-    if (!cor.trim()) novosErros.corCodigo = 'A cor/código é obrigatória';
+    if (!cor.trim()) novosErros.cor = 'A cor é obrigatória';
+    else if (cor.trim().length > 50) novosErros.cor = 'A cor pode ter no máximo 50 caracteres';
+    if (codigo.trim().length > 20) novosErros.codigo = 'O código pode ter no máximo 20 caracteres';
     if (metragem === '' || Number(metragem) <= 0) novosErros.metragem = 'A metragem deve ser maior que zero';
     if (!dataEntrada) novosErros.dataEntrada = 'A data de entrada é obrigatória';
     if (Object.keys(novosErros).length > 0) {
@@ -154,7 +159,8 @@ function ModalNovaEntrada({ onClose, onSaved }) {
     try {
       const entrada = await registrarEntrada({
         idTecido: Number(idTecido),
-        corCodigo: cor.trim(),
+        cor: cor.trim(),
+        codigo: codigo.trim(),
         metragem: Number(metragem),
         dataEntrada,
       });
@@ -198,16 +204,31 @@ function ModalNovaEntrada({ onClose, onSaved }) {
             {campoErro('idTecido')}
           </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>COR / CÓDIGO</label>
-            <input
-              type="text"
-              placeholder="Ex: Off-white, #CR-001"
-              value={cor}
-              onChange={(e) => { setCor(e.target.value); limparErro('corCodigo'); }}
-              style={styles.input}
-            />
-            {campoErro('corCodigo')}
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ ...styles.inputGroup, flex: 2 }}>
+              <label style={styles.label}>COR *</label>
+              <input
+                type="text"
+                placeholder="Ex: Marinho"
+                maxLength={50}
+                value={cor}
+                onChange={(e) => { setCor(e.target.value); limparErro('cor'); }}
+                style={styles.input}
+              />
+              {campoErro('cor')}
+            </div>
+            <div style={{ ...styles.inputGroup, flex: 1 }}>
+              <label style={styles.label}>CÓDIGO</label>
+              <input
+                type="text"
+                placeholder="Ex: 05"
+                maxLength={20}
+                value={codigo}
+                onChange={(e) => { setCodigo(e.target.value); limparErro('codigo'); }}
+                style={styles.input}
+              />
+              {campoErro('codigo')}
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>

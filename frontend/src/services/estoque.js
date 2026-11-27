@@ -10,10 +10,12 @@ export function listarEstoque({ busca, somenteBaixo = false } = {}) {
 }
 
 // Registra a entrada; o back cria a linha tecido + cor se ela não existir e soma a metragem.
-export function registrarEntrada({ idTecido, corCodigo, metragem, dataEntrada }) {
+// "cor" é obrigatória (máx. 50) e "codigo" é opcional (máx. 20); o back normaliza a cor (preto -> Preto)
+// e o código (maiúsculas). O texto de exibição vem pronto em "descricaoCor" (ex.: '05 Marinho' ou 'Marinho').
+export function registrarEntrada({ idTecido, cor, codigo, metragem, dataEntrada }) {
   return chamarApi('/estoque/entradas', {
     method: 'POST',
-    body: JSON.stringify({ idTecido, corCodigo, metragem, dataEntrada }),
+    body: JSON.stringify({ idTecido, cor, codigo: codigo || null, metragem, dataEntrada }),
   });
 }
 
