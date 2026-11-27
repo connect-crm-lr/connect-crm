@@ -68,7 +68,7 @@ class ListagensIntegrationTest {
                 null, null, "Goiânia", "GO"));
         Tecido linho = tecidoRepository.save(new Tecido("IT Linho Natural", null, null, null,
                 new BigDecimal("42.50"), null));
-        linhaLinho = new Estoque(linho, "Natural");
+        linhaLinho = new Estoque(linho, null, "Natural");
         linhaLinho.somar(new BigDecimal("100.00"));
         linhaLinho = estoqueRepository.save(linhaLinho);
     }

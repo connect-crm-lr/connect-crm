@@ -28,8 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +56,7 @@ class EstoqueServiceTest {
     }
 
     private static Estoque linhaCom(Tecido tecido, String cor, String metros) {
-        Estoque estoque = new Estoque(tecido, cor);
+        Estoque estoque = new Estoque(tecido, null, cor);
         estoque.somar(new BigDecimal(metros));
         return estoque;
     }
@@ -69,14 +71,14 @@ class EstoqueServiceTest {
         when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
 
         EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
-                new EntradaEstoqueRequest(1L, " Natural ", new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
+                new EntradaEstoqueRequest(1L, " Natural ", null, new BigDecimal("50.00"), LocalDate.of(2026, 11, 3)));
 
         assertThat(linha.getMetragem()).isEqualByComparingTo("65.00");
         assertThat(resposta.saldoAtual()).isEqualByComparingTo("65.00");
         assertThat(resposta.metragem()).isEqualByComparingTo("50.00");
         assertThat(resposta.dataEntrada()).isEqualTo(LocalDate.of(2026, 11, 3));
-        // A cor chega ao banco sem os espaços e com a grafia digitada (comparação exata, V1).
-        verify(estoqueRepository).criarSeNaoExistir(any(), eq("Natural"));
+        // A cor chega ao banco sem os espaços e normalizada (primeira letra maiúscula).
+        verify(estoqueRepository).criarSeNaoExistir(any(), isNull(), eq("Natural"));
     }
 
     // CT-RD004-01: cor nova cria a linha com 0 (no banco, com ON CONFLICT) e soma a entrada.
@@ -85,15 +87,15 @@ class EstoqueServiceTest {
         Tecido tecido = linho();
         when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
         when(estoqueRepository.buscarParaAtualizar(any(), eq("Cru")))
-                .thenReturn(Optional.of(new Estoque(tecido, "Cru")));
+                .thenReturn(Optional.of(new Estoque(tecido, null, "Cru")));
         when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
 
         EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
-                new EntradaEstoqueRequest(1L, "Cru", new BigDecimal("30.50"), null));
+                new EntradaEstoqueRequest(1L, "Cru", null, new BigDecimal("30.50"), null));
 
         // A criação vem antes do SELECT ... FOR UPDATE, senão a linha nova não seria travada.
         InOrder ordem = inOrder(estoqueRepository);
-        ordem.verify(estoqueRepository).criarSeNaoExistir(any(), eq("Cru"));
+        ordem.verify(estoqueRepository).criarSeNaoExistir(any(), isNull(), eq("Cru"));
         ordem.verify(estoqueRepository).buscarParaAtualizar(any(), eq("Cru"));
         assertThat(resposta.saldoAtual()).isEqualByComparingTo("30.50");
     }
@@ -108,7 +110,7 @@ class EstoqueServiceTest {
         when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
 
         EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
-                new EntradaEstoqueRequest(1L, "Natural", BigDecimal.TEN, null));
+                new EntradaEstoqueRequest(1L, "Natural", null, BigDecimal.TEN, null));
 
         assertThat(resposta.dataEntrada()).isEqualTo(LocalDate.now(ZoneId.of("America/Sao_Paulo")));
     }
@@ -121,11 +123,11 @@ class EstoqueServiceTest {
         when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
 
         assertThatThrownBy(() -> estoqueService.registrarEntrada(
-                new EntradaEstoqueRequest(1L, "Natural", BigDecimal.TEN, null)))
+                new EntradaEstoqueRequest(1L, "Natural", null, BigDecimal.TEN, null)))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O tecido Linho Natural está desativado. Reative o tecido antes de registrar a entrada.");
         verify(entradaEstoqueRepository, never()).save(any(EntradaEstoque.class));
-        verify(estoqueRepository, never()).criarSeNaoExistir(any(), any());
+        verify(estoqueRepository, never()).criarSeNaoExistir(any(), any(), any());
     }
 
     @Test
@@ -133,9 +135,115 @@ class EstoqueServiceTest {
         when(tecidoRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> estoqueService.registrarEntrada(
-                new EntradaEstoqueRequest(99L, "Natural", BigDecimal.TEN, null)))
+                new EntradaEstoqueRequest(99L, "Natural", null, BigDecimal.TEN, null)))
                 .isInstanceOf(RecursoNaoEncontradoException.class)
                 .hasMessage("Tecido não encontrado");
+    }
+
+    // Normalização: "preto", " PRETO " e "Preto" são a mesma cor; só a primeira letra fica maiúscula.
+    @Test
+    void registrarEntrada_normalizaACorParaPrimeiraLetraMaiuscula() {
+        Tecido tecido = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Preto")))
+                .thenReturn(Optional.of(linhaCom(tecido, "Preto", "0")));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "preto", null, BigDecimal.TEN, null));
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, " PRETO ", null, BigDecimal.TEN, null));
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "Preto", null, BigDecimal.TEN, null));
+
+        verify(estoqueRepository, times(3)).criarSeNaoExistir(any(), isNull(), eq("Preto"));
+        verify(estoqueRepository, times(3)).buscarParaAtualizar(any(), eq("Preto"));
+    }
+
+    @Test
+    void normalizarCor_deixaSoAPrimeiraLetraMaiuscula() {
+        assertThat(EstoqueService.normalizarCor("azul marinho")).isEqualTo("Azul marinho");
+        assertThat(EstoqueService.normalizarCor("  OFF-WHITE ")).isEqualTo("Off-white");
+        assertThat(EstoqueService.normalizarCor("ímpar")).isEqualTo("Ímpar");
+    }
+
+    // O código é opcional: informado vira maiúsculo; vazio, só espaços ou ausente viram null.
+    @Test
+    void registrarEntrada_codigoInformado_vaiEmMaiusculas() {
+        Tecido tecido = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho")))
+                .thenReturn(Optional.of(new Estoque(tecido, "05A", "Marinho")));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
+                new EntradaEstoqueRequest(1L, "marinho", " 05a ", BigDecimal.TEN, null));
+
+        verify(estoqueRepository).criarSeNaoExistir(any(), eq("05A"), eq("Marinho"));
+        assertThat(resposta.codigo()).isEqualTo("05A");
+        assertThat(resposta.cor()).isEqualTo("Marinho");
+        assertThat(resposta.descricaoCor()).isEqualTo("05A Marinho");
+    }
+
+    @Test
+    void normalizarCodigo_vazioOuAusenteViraNull() {
+        assertThat(EstoqueService.normalizarCodigo(null)).isNull();
+        assertThat(EstoqueService.normalizarCodigo("")).isNull();
+        assertThat(EstoqueService.normalizarCodigo("   ")).isNull();
+        assertThat(EstoqueService.normalizarCodigo(" 12b ")).isEqualTo("12B");
+    }
+
+    @Test
+    void descricaoCor_semCodigo_ehSoACor() {
+        Estoque semCodigo = new Estoque(linho(), null, "Marinho");
+        Estoque comCodigo = new Estoque(linho(), "05", "Marinho");
+
+        assertThat(semCodigo.getDescricaoCor()).isEqualTo("Marinho");
+        assertThat(comCodigo.getDescricaoCor()).isEqualTo("05 Marinho");
+    }
+
+    // Cor existente com outro código: recusa com a mensagem que diz qual código já está gravado.
+    @Test
+    void registrarEntrada_corExistenteComOutroCodigo_recusaComMensagem() {
+        Tecido tecido = linho();
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho")))
+                .thenReturn(Optional.of(new Estoque(tecido, "05", "Marinho")));
+
+        assertThatThrownBy(() -> estoqueService.registrarEntrada(
+                new EntradaEstoqueRequest(1L, "marinho", "06", BigDecimal.TEN, null)))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Linho Natural / Marinho já está cadastrada com o código 05. Confira o código.");
+        verify(entradaEstoqueRepository, never()).save(any());
+    }
+
+    // Mesmo código, ou entrada sem código, numa linha que já tem código: aceita e soma.
+    @Test
+    void registrarEntrada_corExistenteComMesmoCodigoOuSemCodigo_soma() {
+        Tecido tecido = linho();
+        Estoque linha = new Estoque(tecido, "05", "Marinho");
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho"))).thenReturn(Optional.of(linha));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "Marinho", "05", BigDecimal.TEN, null));
+        estoqueService.registrarEntrada(new EntradaEstoqueRequest(1L, "Marinho", null, BigDecimal.TEN, null));
+
+        assertThat(linha.getMetragem()).isEqualByComparingTo("20");
+        assertThat(linha.getCodigo()).isEqualTo("05");
+    }
+
+    // Linha existente sem código + entrada com código: preenche o código na linha.
+    @Test
+    void registrarEntrada_linhaSemCodigoEEntradaComCodigo_preencheOCodigo() {
+        Tecido tecido = linho();
+        Estoque linha = new Estoque(tecido, null, "Marinho");
+        when(tecidoRepository.findById(1L)).thenReturn(Optional.of(tecido));
+        when(estoqueRepository.buscarParaAtualizar(any(), eq("Marinho"))).thenReturn(Optional.of(linha));
+        when(entradaEstoqueRepository.save(any(EntradaEstoque.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        EntradaEstoqueResponse resposta = estoqueService.registrarEntrada(
+                new EntradaEstoqueRequest(1L, "Marinho", "05", BigDecimal.TEN, null));
+
+        assertThat(linha.getCodigo()).isEqualTo("05");
+        assertThat(resposta.descricaoCor()).isEqualTo("05 Marinho");
     }
 
     // CT-RF009-02: valor-limite do estoque baixo (< 20 m).
@@ -148,7 +256,7 @@ class EstoqueServiceTest {
 
         List<EstoqueResponse> resposta = estoqueService.listar(null, false);
 
-        assertThat(resposta).extracting(EstoqueResponse::corCodigo, EstoqueResponse::estoqueBaixo)
+        assertThat(resposta).extracting(EstoqueResponse::cor, EstoqueResponse::estoqueBaixo)
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple("Areia", true),
                         org.assertj.core.groups.Tuple.tuple("Natural", false));

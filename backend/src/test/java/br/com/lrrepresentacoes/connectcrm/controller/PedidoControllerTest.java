@@ -56,9 +56,9 @@ class PedidoControllerTest {
     private static PedidoResponse resposta(StatusPedido status) {
         return new PedidoResponse(7L, 1L, "Ateliê Bella Noiva", null, LocalDateTime.of(2026, 11, 3, 10, 0),
                 FormaPagamento.BOLETO, status, new BigDecimal("497.25"), List.of(
-                new ItemPedidoResponse(1L, 10L, "Linho Natural", "Natural", new BigDecimal("10.00"),
+                new ItemPedidoResponse(1L, 10L, "Linho Natural", null, "Natural", "Natural", new BigDecimal("10.00"),
                         new BigDecimal("42.50"), new BigDecimal("425.00")),
-                new ItemPedidoResponse(2L, 11L, "Viscose", "Azul", new BigDecimal("2.50"),
+                new ItemPedidoResponse(2L, 11L, "Viscose", null, "Azul", "Azul", new BigDecimal("2.50"),
                         new BigDecimal("28.90"), new BigDecimal("72.25"))));
     }
 

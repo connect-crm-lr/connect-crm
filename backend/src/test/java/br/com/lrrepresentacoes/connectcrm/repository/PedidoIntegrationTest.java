@@ -84,9 +84,9 @@ class PedidoIntegrationTest {
         Tecido viscose = tecidoRepository.save(new Tecido("IT Viscose", null, null, null,
                 new BigDecimal("28.90"), null));
         idLinhoNatural = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                linho.getId(), "Natural", new BigDecimal("15.00"), null)).idEstoque();
+                linho.getId(), "Natural", null, new BigDecimal("15.00"), null)).idEstoque();
         idViscoseAzul = estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                viscose.getId(), "Azul", new BigDecimal("30.00"), null)).idEstoque();
+                viscose.getId(), "Azul", null, new BigDecimal("30.00"), null)).idEstoque();
     }
 
     @AfterEach

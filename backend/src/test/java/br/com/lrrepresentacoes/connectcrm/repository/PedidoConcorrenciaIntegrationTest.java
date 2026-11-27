@@ -91,7 +91,7 @@ class PedidoConcorrenciaIntegrationTest {
 
     private Long criarLinhaDeEstoque(String cor, String metros) {
         return estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                tecido.getId(), cor, new BigDecimal(metros), null)).idEstoque();
+                tecido.getId(), cor, null, new BigDecimal(metros), null)).idEstoque();
     }
 
     private PedidoRequest pedido(ItemPedidoRequest... itens) {

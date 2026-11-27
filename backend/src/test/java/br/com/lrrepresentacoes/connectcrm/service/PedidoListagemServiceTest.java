@@ -48,7 +48,7 @@ class PedidoListagemServiceTest {
         Cliente cliente = new Cliente(REVENDEDOR, "Ateliê Bella Noiva", "5562999998888", null, null, "Goiânia", "GO");
         ReflectionTestUtils.setField(cliente, "id", 1L);
         Tecido linho = new Tecido("Linho Natural", null, null, null, new BigDecimal("42.50"), null);
-        Estoque linha = new Estoque(linho, "Natural");
+        Estoque linha = new Estoque(linho, null, "Natural");
         linha.somar(new BigDecimal("50.00"));
         ReflectionTestUtils.setField(linha, "id", 10L);
 
@@ -209,7 +209,7 @@ class PedidoListagemServiceTest {
         assertThat(resposta.total()).isEqualByComparingTo("425.00");
         assertThat(resposta.itens()).hasSize(1);
         assertThat(resposta.itens().get(0).tecido()).isEqualTo("Linho Natural");
-        assertThat(resposta.itens().get(0).corCodigo()).isEqualTo("Natural");
+        assertThat(resposta.itens().get(0).descricaoCor()).isEqualTo("Natural");
         assertThat(resposta.itens().get(0).metragem()).isEqualByComparingTo("10.00");
         assertThat(resposta.itens().get(0).precoMetro()).isEqualByComparingTo("42.50");
         assertThat(resposta.itens().get(0).subtotal()).isEqualByComparingTo("425.00");

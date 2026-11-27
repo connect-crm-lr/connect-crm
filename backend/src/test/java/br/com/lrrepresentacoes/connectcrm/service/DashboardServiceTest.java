@@ -137,7 +137,7 @@ class DashboardServiceTest {
         semDados();
         Tecido linho = new Tecido("Linho Natural", "100% Linho", 185, new BigDecimal("1.40"),
                 new BigDecimal("42.50"), null);
-        Estoque linha = new Estoque(linho, "Bege 102");
+        Estoque linha = new Estoque(linho, "102", "Bege");
         linha.somar(new BigDecimal("18.00"));
         when(estoqueRepository.listarAbaixoDe(new BigDecimal("20"))).thenReturn(List.of(linha));
 
@@ -146,7 +146,7 @@ class DashboardServiceTest {
         verify(estoqueRepository).listarAbaixoDe(new BigDecimal("20"));
         assertThat(resposta.estoqueBaixo()).singleElement().satisfies(e -> {
             assertThat(e.tecido()).isEqualTo("Linho Natural");
-            assertThat(e.corCodigo()).isEqualTo("Bege 102");
+            assertThat(e.descricaoCor()).isEqualTo("102 Bege");
             assertThat(e.estoqueBaixo()).isTrue();
         });
     }

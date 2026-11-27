@@ -20,16 +20,16 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
     @Query("""
             SELECT e FROM Estoque e JOIN FETCH e.tecido t
             WHERE t.ativo = true
-            ORDER BY t.nome, e.corCodigo
+            ORDER BY t.nome, e.cor
             """)
     List<Estoque> listarDeTecidosAtivos();
 
-    // Busca pelo nome do tecido ou pela cor/código; o padrão chega em minúsculas e entre '%'.
+    // Busca pelo nome do tecido ou pela cor ou pelo código; o padrão chega em minúsculas e entre '%'.
     @Query("""
             SELECT e FROM Estoque e JOIN FETCH e.tecido t
             WHERE t.ativo = true
-              AND (LOWER(t.nome) LIKE :padrao OR LOWER(e.corCodigo) LIKE :padrao)
-            ORDER BY t.nome, e.corCodigo
+              AND (LOWER(t.nome) LIKE :padrao OR LOWER(e.cor) LIKE :padrao OR LOWER(e.codigo) LIKE :padrao)
+            ORDER BY t.nome, e.cor
             """)
     List<Estoque> buscarDeTecidosAtivos(@Param("padrao") String padrao);
 
@@ -47,27 +47,30 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
      * a segunda espera a primeira terminar e não insere nada, em vez de falhar na
      * uk_estoque_tecido_cor. Capturar a exceção não serviria: no PostgreSQL, depois de um erro
      * a transação inteira fica abortada. metragem e atualizado_em usam os DEFAULT da V1.
+     * Se a linha já existe, o código não é gravado aqui: o service confere e preenche/recusa.
      */
     @Modifying
     @Query(value = """
-            INSERT INTO estoque (id_tecido, cor_codigo)
-            VALUES (:idTecido, :corCodigo)
+            INSERT INTO estoque (id_tecido, codigo, cor)
+            VALUES (:idTecido, CAST(:codigo AS VARCHAR), :cor)
             ON CONFLICT ON CONSTRAINT uk_estoque_tecido_cor DO NOTHING
             """, nativeQuery = true)
-    int criarSeNaoExistir(@Param("idTecido") Long idTecido, @Param("corCodigo") String corCodigo);
+    int criarSeNaoExistir(@Param("idTecido") Long idTecido, @Param("codigo") String codigo,
+                         @Param("cor") String cor);
 
     /**
      * Busca a linha do tecido + cor travando-a até o fim da transação (SELECT ... FOR UPDATE).
      * Assim duas entradas ao mesmo tempo na mesma linha não perdem a soma uma da outra.
-     * A cor é comparada exatamente como foi gravada, igual à uk_estoque_tecido_cor da V1.
+     * A cor é comparada exatamente como foi gravada, igual à uk_estoque_tecido_cor; o service
+     * normaliza a cor antes ("preto" e "Preto" caem na mesma linha).
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT e FROM Estoque e
-            WHERE e.tecido.id = :idTecido AND e.corCodigo = :corCodigo
+            WHERE e.tecido.id = :idTecido AND e.cor = :cor
             """)
     Optional<Estoque> buscarParaAtualizar(@Param("idTecido") Long idTecido,
-                                          @Param("corCodigo") String corCodigo);
+                                          @Param("cor") String cor);
 
     /**
      * Busca as linhas de estoque de um pedido travando-as até o fim da transação

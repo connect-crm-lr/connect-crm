@@ -60,11 +60,11 @@ class EstoqueConcorrenciaIntegrationTest {
     // uk_estoque_tecido_cor, existe uma única linha e nenhuma metragem se perde.
     @Test
     void entradasSimultaneas_corNova_criamUmaLinhaESomamTudo() throws Exception {
-        registrarAoMesmoTempo("Azul Royal", new BigDecimal("10.00"));
+        registrarAoMesmoTempo("Azul royal", new BigDecimal("10.00"));
 
-        assertThat(contarLinhas("Azul Royal")).isEqualTo(1);
-        assertThat(saldo("Azul Royal")).isEqualByComparingTo("40.00");
-        assertThat(contarEntradas("Azul Royal")).isEqualTo(ENTRADAS_SIMULTANEAS);
+        assertThat(contarLinhas("Azul royal")).isEqualTo(1);
+        assertThat(saldo("Azul royal")).isEqualByComparingTo("40.00");
+        assertThat(contarEntradas("Azul royal")).isEqualTo(ENTRADAS_SIMULTANEAS);
     }
 
     // Entradas simultâneas numa linha que já existe: o SELECT ... FOR UPDATE faz uma
@@ -72,7 +72,7 @@ class EstoqueConcorrenciaIntegrationTest {
     @Test
     void entradasSimultaneas_linhaExistente_naoPerdemASoma() throws Exception {
         estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                tecido.getId(), "Verde", new BigDecimal("5.00"), null));
+                tecido.getId(), "Verde", null, new BigDecimal("5.00"), null));
 
         registrarAoMesmoTempo("Verde", new BigDecimal("2.50"));
 
@@ -92,7 +92,7 @@ class EstoqueConcorrenciaIntegrationTest {
                 resultados.add(executor.submit(() -> {
                     largada.await();
                     estoqueService.registrarEntrada(new EntradaEstoqueRequest(
-                            tecido.getId(), cor, metragem, null));
+                            tecido.getId(), cor, null, metragem, null));
                     return null;
                 }));
             }
@@ -108,20 +108,20 @@ class EstoqueConcorrenciaIntegrationTest {
 
     private int contarLinhas(String cor) {
         return jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM estoque WHERE id_tecido = ? AND cor_codigo = ?",
+                "SELECT count(*) FROM estoque WHERE id_tecido = ? AND cor = ?",
                 Integer.class, tecido.getId(), cor);
     }
 
     private BigDecimal saldo(String cor) {
         return jdbcTemplate.queryForObject(
-                "SELECT metragem FROM estoque WHERE id_tecido = ? AND cor_codigo = ?",
+                "SELECT metragem FROM estoque WHERE id_tecido = ? AND cor = ?",
                 BigDecimal.class, tecido.getId(), cor);
     }
 
     private int contarEntradas(String cor) {
         return jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM entrada_estoque en JOIN estoque e ON e.id_estoque = en.id_estoque "
-                        + "WHERE e.id_tecido = ? AND e.cor_codigo = ?",
+                        + "WHERE e.id_tecido = ? AND e.cor = ?",
                 Integer.class, tecido.getId(), cor);
     }
 }

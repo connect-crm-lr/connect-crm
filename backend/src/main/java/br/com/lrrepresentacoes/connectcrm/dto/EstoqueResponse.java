@@ -12,7 +12,9 @@ public record EstoqueResponse(
         Long id,
         Long idTecido,
         String tecido,
-        String corCodigo,
+        String codigo,
+        String cor,
+        String descricaoCor,
         BigDecimal metragem,
         boolean estoqueBaixo
 ) {
@@ -23,7 +25,9 @@ public record EstoqueResponse(
                 estoque.getId(),
                 estoque.getTecido().getId(),
                 estoque.getTecido().getNome(),
-                estoque.getCorCodigo(),
+                estoque.getCodigo(),
+                estoque.getCor(),
+                estoque.getDescricaoCor(),
                 estoque.getMetragem(),
                 estoque.getMetragem().compareTo(limiteEstoqueBaixo) < 0);
     }

@@ -44,7 +44,7 @@ class PedidoListagemControllerTest {
     private static PedidoResponse resposta(Long id, StatusPedido status) {
         return new PedidoResponse(id, 1L, "Ateliê Bella Noiva", null, LocalDateTime.of(2026, 11, 3, 10, 0),
                 FormaPagamento.BOLETO, status, new BigDecimal("425.00"), List.of(
-                new ItemPedidoResponse(1L, 10L, "Linho Natural", "Natural", new BigDecimal("10.00"),
+                new ItemPedidoResponse(1L, 10L, "Linho Natural", null, "Natural", "Natural", new BigDecimal("10.00"),
                         new BigDecimal("42.50"), new BigDecimal("425.00"))));
     }
 
@@ -191,7 +191,7 @@ class PedidoListagemControllerTest {
                 .andExpect(jsonPath("$.id").value(7))
                 .andExpect(jsonPath("$.total").value(425.00))
                 .andExpect(jsonPath("$.itens[0].tecido").value("Linho Natural"))
-                .andExpect(jsonPath("$.itens[0].corCodigo").value("Natural"))
+                .andExpect(jsonPath("$.itens[0].descricaoCor").value("Natural"))
                 .andExpect(jsonPath("$.itens[0].metragem").value(10.00))
                 .andExpect(jsonPath("$.itens[0].precoMetro").value(42.50))
                 .andExpect(jsonPath("$.itens[0].subtotal").value(425.00));

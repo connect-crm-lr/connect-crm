@@ -55,7 +55,7 @@ class DashboardControllerTest {
         when(dashboardService.resumo()).thenReturn(new DashboardResponse(
                 new BigDecimal("1530.50"), 4L, porEtapa,
                 List.of(new FollowUpResponse(7L, 2L, "Ateliê Bella Noiva", hoje, "Retornar", null)),
-                List.of(new EstoqueResponse(5L, 1L, "Linho Natural", "Bege 102", new BigDecimal("18.00"), true))));
+                List.of(new EstoqueResponse(5L, 1L, "Linho Natural", "102", "Bege", "102 Bege", new BigDecimal("18.00"), true))));
 
         mockMvc.perform(get("/dashboard"))
                 .andExpect(status().isOk())
@@ -65,7 +65,7 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.negociacoesPorEtapa.AGUARDANDO_RESPOSTA").value(3))
                 .andExpect(jsonPath("$.negociacoesPorEtapa.PERDIDA").value(0))
                 .andExpect(jsonPath("$.pendenciasHoje[0].cliente").value("Ateliê Bella Noiva"))
-                .andExpect(jsonPath("$.estoqueBaixo[0].corCodigo").value("Bege 102"))
+                .andExpect(jsonPath("$.estoqueBaixo[0].descricaoCor").value("102 Bege"))
                 .andExpect(jsonPath("$.estoqueBaixo[0].estoqueBaixo").value(true));
     }
 }

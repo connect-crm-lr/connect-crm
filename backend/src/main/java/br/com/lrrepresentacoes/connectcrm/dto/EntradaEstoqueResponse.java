@@ -13,7 +13,9 @@ public record EntradaEstoqueResponse(
         Long id,
         Long idEstoque,
         String tecido,
-        String corCodigo,
+        String codigo,
+        String cor,
+        String descricaoCor,
         BigDecimal metragem,
         LocalDate dataEntrada,
         BigDecimal saldoAtual
@@ -25,7 +27,9 @@ public record EntradaEstoqueResponse(
                 entrada.getId(),
                 entrada.getEstoque().getId(),
                 entrada.getEstoque().getTecido().getNome(),
-                entrada.getEstoque().getCorCodigo(),
+                entrada.getEstoque().getCodigo(),
+                entrada.getEstoque().getCor(),
+                entrada.getEstoque().getDescricaoCor(),
                 entrada.getMetragem(),
                 entrada.getDataEntrada(),
                 entrada.getEstoque().getMetragem());
